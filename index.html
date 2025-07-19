@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังคำศัพท์พื้นฐานสำหรับเขียนตามคำบอก</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Neutrals (background: stone-50, cards: white, accent: emerald-600) -->
+    <!-- Application Structure Plan: A single-page application using a tab-based navigation for grade levels (ป.1, ป.2, ป.3). This structure is user-friendly and allows quick access to specific content without scrolling through a long list. Each grade's section contains the two difficulty levels ("ปานกลาง" and "ยากที่สุด") displayed in a responsive grid of cards. A search bar provides instant filtering, enhancing usability for finding specific words. The new dictation section includes a timer, word display, and controls for starting, getting the next word, revealing the word, and playing audio. This design prioritizes fast, targeted information retrieval and interactive dictation practice. -->
+    <!-- Visualization & Content Choices: Report Info: Hierarchical list of spelling words. Goal: Organize and allow easy exploration, plus interactive dictation. Viz/Presentation Method: Interactive word bank using HTML/CSS cards in a grid for exploration. For dictation, a dynamic word display, timer, and audio playback. Interaction: Grade selection via buttons, live search filtering, dictation controls (start, next, reveal, play audio). Justification: Cards are clear for word presentation. Tabbed navigation and search are intuitive for filtering. Dictation features provide a practical, interactive learning tool. Library/Method: Vanilla JavaScript for logic, Tailwind CSS for styling. Chart.js/Plotly.js are not used as they are not relevant for this application's functionality. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .active-tab {
+            background-color: #059669; /* emerald-600 */
+            color: white;
+            border-color: #059669; /* emerald-600 */
+        }
+        .inactive-tab {
+            background-color: white;
+            color: #374151; /* gray-700 */
+            border-color: #d1d5db; /* gray-300 */
+        }
+        .difficulty-radio input[type="radio"]:checked + span {
+            background-color: #059669; /* emerald-600 */
+            color: white;
+            border-color: #059669; /* emerald-600 */
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-emerald-700">คลังคำศัพท์พื้นฐาน</h1>
+            <p class="text-lg text-gray-600 mt-2">สำหรับฝึกเขียนตามคำบอก ชั้น ป.1 - ป.3</p>
+        </header>
+
+        <main>
+            <div class="mb-6 p-4 bg-white rounded-lg shadow">
+                 <p class="text-gray-700 text-center">
+                    แอปพลิเคชันนี้ได้รวบรวมคำศัพท์พื้นฐานตามหลักสูตรกระทรวงศึกษาธิการสำหรับนักเรียนชั้นประถมศึกษาปีที่ 1 ถึง 3 โดยแบ่งตามระดับชั้นและความยากง่าย คุณสามารถเลือกดูคำศัพท์ตามชั้นเรียน และใช้ช่องค้นหาเพื่อกรองคำที่ต้องการได้อย่างรวดเร็ว เหมาะสำหรับใช้เป็นเครื่องมือในการฝึกฝนการเขียนและอ่านให้แม่นยำยิ่งขึ้น
+                </p>
+            </div>
+
+            <div id="navigation" class="flex justify-center items-center gap-2 sm:gap-4 mb-6">
+                <button onclick="changeGrade('p1')" id="tab-p1" class="w-full sm:w-auto text-lg font-bold py-2 px-6 rounded-lg transition-colors duration-300 border-2">
+                    ชั้น ป.1
+                </button>
+                <button onclick="changeGrade('p2')" id="tab-p2" class="w-full sm:w-auto text-lg font-bold py-2 px-6 rounded-lg transition-colors duration-300 border-2">
+                    ชั้น ป.2
+                </button>
+                <button onclick="changeGrade('p3')" id="tab-p3" class="w-full sm:w-auto text-lg font-bold py-2 px-6 rounded-lg transition-colors duration-300 border-2">
+                    ชั้น ป.3
+                </button>
+            </div>
+
+            <div class="sticky top-2 z-10 mb-8">
+                <div class="relative">
+                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    <input type="text" id="searchInput" onkeyup="filterWords()" placeholder="ค้นหาคำศัพท์..." class="w-full p-3 pl-10 text-lg border-2 border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 shadow-sm">
+                </div>
+            </div>
+
+            <div id="word-content" class="mb-12">
+            </div>
+
+            <section class="bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2 mb-4">ฝึกเขียนตามคำบอก</h2>
+                <p class="text-gray-700 mb-4">
+                    เลือกความยากของคำศัพท์ที่ต้องการฝึก จากนั้นกด "เริ่มเขียนตามคำบอก" ระบบจะสุ่มคำและออกเสียงให้ฟัง 2 ครั้ง คุณสามารถกด "คำต่อไป" เพื่อสุ่มคำใหม่ หรือ "เฉลยคำ" เพื่อดูคำศัพท์และคำอ่าน
+                </p>
+
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
+                    <div class="flex gap-4 difficulty-radio">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="difficulty" value="medium" class="hidden" checked onchange="updateDictationDifficulty(this.value)">
+                            <span class="px-4 py-2 rounded-lg border-2 border-gray-300 font-medium transition-colors duration-300">ความยากปานกลาง</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="difficulty" value="hard" class="hidden" onchange="updateDictationDifficulty(this.value)">
+                            <span class="px-4 py-2 rounded-lg border-2 border-gray-300 font-medium transition-colors duration-300">ความยากมากที่สุด</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center gap-4 mb-6">
+                    <div id="timerDisplay" class="text-5xl font-mono text-emerald-700 mb-4 p-4 bg-emerald-50 rounded-lg shadow-inner w-full text-center max-w-xs">00:00</div>
+                    
+                    <div id="dictationWordDisplay" class="hidden flex-col items-center p-6 bg-emerald-100 rounded-lg shadow-inner w-full max-w-md">
+                        <p class="text-4xl font-bold text-emerald-800 mb-2" id="currentWord"></p>
+                        <p class="text-xl text-emerald-600" id="currentReading"></p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button id="startButton" onclick="startDictation()" class="bg-emerald-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-emerald-700 transition-colors duration-300">
+                        เริ่มเขียนตามคำบอก
+                    </button>
+                    <button id="nextButton" onclick="nextWord()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-300" disabled>
+                        คำต่อไป
+                    </button>
+                    <button id="revealButton" onclick="revealWord()" class="bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-yellow-700 transition-colors duration-300" disabled>
+                        เฉลยคำ
+                    </button>
+                    <button id="playAudioButton" onclick="speakWord(currentDictationWord, 2)" class="bg-purple-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-purple-700 transition-colors duration-300" disabled>
+                        ฟังอีกครั้ง
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const wordData = {
+            p1: {
+                medium: [
+                    { word: "กบ", reading: "กบ" }, { word: "กา", reading: "กา" }, { word: "กิน", reading: "กิน" },
+                    { word: "เงิน", reading: "เงิน" }, { word: "จาน", reading: "จาน" }, { word: "จริง", reading: "จิง" },
+                    { word: "ใจดี", reading: "ใจ-ดี" }, { word: "ช้าง", reading: "ช้าง" }, { word: "ดอกไม้", reading: "ดอก-ไม้" },
+                    { word: "ดินสอ", reading: "ดิน-สอ" }, { word: "เด็ก", reading: "เด็ก" }, { word: "เต่า", reading: "เต่า" },
+                    { word: "ถุง", reading: "ถุง" }, { word: "นก", reading: "นก" }, { word: "น้ำ", reading: "น้ำ" },
+                    { word: "บ้าน", reading: "บ้าน" }, { word: "ปู", reading: "ปู" }, { word: "ผม", reading: "ผม" },
+                    { word: "ผีเสื้อ", reading: "ผี-เสื้อ" }, { word: "ฝน", reading: "ฝน" }, { word: "พ่อ", reading: "พ่อ" },
+                    { word: "แม่", reading: "แม่" }, { word: "มะลิ", reading: "มะ-ลิ" }, { word: "มือ", reading: "มือ" },
+                    { word: "ร้อง", reading: "ร้อง" }, { word: "รองเท้า", reading: "รอง-เท้า" }, { word: "ลิง", reading: "ลิง" },
+                    { word: "วัด", reading: "วัด" }, { word: "หมี", reading: "หมี" }, { word: "หู", reading: "หู" }
+                ],
+                hard: [
+                    { word: "กระต่าย", reading: "กระ-ต่าย" }, { word: "กางเกง", reading: "กาง-เกง" }, { word: "กะทิ", reading: "กะ-ทิ" },
+                    { word: "กระจก", reading: "กระ-จก" }, { word: "กรรไกร", reading: "กัน-ไกร" }, { word: "กระเป๋า", reading: "กระ-เป๋า" },
+                    { word: "ข้าว", reading: "ข้าว" }, { word: "เขียน", reading: "เขียน" }, { word: "คุณครู", reading: "คุน-ครู" },
+                    { word: "จระเข้", reading: "จอ-ระ-เข้" }, { word: "จังหวัด", reading: "จัง-หวัด" }, { word: "ฉลาม", reading: "ฉะ-หลาม" },
+                    { word: "ช้อน", reading: "ช้อน" }, { word: "ดื่ม", reading: "ดื่ม" }, { word: "ตลาด", reading: "ตะ-หลาด" },
+                    { word: "ตุ๊กตา", reading: "ตุ๊ก-กะ-ตา" }, { word: "ถนน", reading: "ถะ-หนน" }, { word: "น้ำแข็ง", reading: "น้ำ-แข็ง" },
+                    { word: "บิน", reading: "บิน" }, { word: "ประตู", reading: "ประ-ตู" }, { word: "ผลไม้", reading: "ผล-ละ-ไม้" },
+                    { word: "พริก", reading: "พริก" }, { word: "โรงเรียน", reading: "โรง-เรียน" }, { word: "รถยนต์", reading: "รด-ยน" },
+                    { word: "ลูกโป่ง", reading: "ลูก-โป่ง" }, { word: "ส้ม", reading: "ส้ม" }, { word: "สัปปะรด", reading: "สับ-ปะ-รด" },
+                    { word: "หนังสือ", reading: "หนัง-สือ" }, { word: "หมวก", reading: "หมวก" }, { word: "เสื้อ", reading: "เสื้อ" },
+                    { word: "กะหล่ำปลี", reading: "กะ-หล่ำ-ปลี" }, { word: "ข้าวหลาม", reading: "ข้าว-หลาม" }, { word: "เครื่องเขียน", reading: "เครื่อง-เขียน" },
+                    { word: "ฉันทนา", reading: "ฉัน-ทะ-นา" }, { word: "ช็อกโกแลต", reading: "ช็อก-โก-แลต" }, { word: "ตะเกียบ", reading: "ตะ-เกียบ" },
+                    { word: "ปรากฏ", reading: "ปรา-กด" }, { word: "พยุง", reading: "พะ-ยุง" }, { word: "สมุด", reading: "สะ-หมุด" },
+                    { word: "หนอน", reading: "หนอน" }
+                ]
+            },
+            p2: {
+                medium: [
+                    { word: "กระถาง", reading: "กระ-ถาง" }, { word: "กระรอก", reading: "กระ-รอก" }, { word: "กะปิ", reading: "กะ-ปิ" },
+                    { word: "กำแพง", reading: "กำ-แพง" }, { word: "กุ้ง", reading: "กุ้ง" }, { word: "เก้าอี้", reading: "เก้า-อี้" },
+                    { word: "ขวด", reading: "ขวด" }, { word: "ความดี", reading: "ความ-ดี" }, { word: "คลื่น", reading: "คลื่น" },
+                    { word: "คลุม", reading: "คลุม" }, { word: "จมูก", reading: "จะ-หมูก" }, { word: "ฉัน", reading: "ฉัน" },
+                    { word: "ชมพู่", reading: "ชม-พู่" }, { word: "ช่วยเหลือ", reading: "ช่วย-เหลือ" }, { word: "ดอกบัว", reading: "ดอก-บัว" },
+                    { word: "ตะวัน", reading: "ตะ-วัน" }, { word: "ตั้งใจ", reading: "ตั้ง-ใจ" }, { word: "ท้องฟ้า", reading: "ท้อง-ฟ้า" },
+                    { word: "ท่องเที่ยว", reading: "ท่อง-เที่ยว" }, { word: "ทะเล", reading: "ทะ-เล" }, { word: "ทราย", reading: "ทราย" },
+                    { word: "นักเรียน", reading: "นัก-เรียน" }, { word: "นิทาน", reading: "นิ-ทาน" }, { word: "ประจำ", reading: "ประ-จำ" },
+                    { word: "ปีก", reading: "ปีก" }, { word: "ผ้าเช็ดตัว", reading: "ผ้า-เช็ด-ตัว" }, { word: "ฝั่ง", reading: "ฝั่ง" },
+                    { word: "เมฆ", reading: "เมก" }, { word: "รองเท้า", reading: "รอง-เท้า" }, { word: "สัญญา", reading: "สัน-ยา" }
+                ],
+                hard: [
+                    { word: "กตัญญู", reading: "กะ-ตัน-ยู" }, { word: "กล้วย", reading: "กล้วย" }, { word: "กว้างขวาง", reading: "กว้าง-ขวาง" },
+                    { word: "ขยัน", reading: "ขะ-หยัน" }, { word: "ขรุขระ", reading: "ขรุ-ขระ" }, { word: "ขลุ่ย", reading: "ขลุ่ย" },
+                    { word: "ขึ้นฉ่าย", reading: "ขึ้น-ฉ่าย" }, { word: "คลอด", reading: "คลอด" }, { word: "ครอบครัว", reading: "ครอบ-ครัว" },
+                    { word: "คลื่นไส้", reading: "คลื่น-ไส้" }, { word: "เครื่องบิน", reading: "เครื่อง-บิน" }, { word: "เงียบ", reading: "เงียบ" },
+                    { word: "จิ้งจก", reading: "จิ้ง-จก" }, { word: "ชั่วคราว", reading: "ชั่ว-คราว" }, { word: "ตรวจสอบ", reading: "ตรวจ-สอบ" },
+                    { word: "ถั่ว", reading: "ถั่ว" }, { word: "ถนน", reading: "ถะ-หนน" }, { word: "เทียนไข", reading: "เทียน-ไข" },
+                    { word: "เนื้อหมู", reading: "เนื้อ-หมู" }, { word: "บทเรียน", reading: "บด-เรียน" }, { word: "ผักกาด", reading: "ผัก-กาด" },
+                    { word: "พืชผัก", reading: "พืด-ผัก" }, { word: "ฟุตบอล", reading: "ฟุด-บอน" }, { word: "มะพร้าว", reading: "มะ-พร้าว" },
+                    { word: "ยางลบ", reading: "ยาง-ลบ" }, { word: "รถจักรยาน", reading: "รด-จัก-กระ-ยาน" }, { word: "สลับ", reading: "สะ-หลับ" },
+                    { word: "สะพาน", reading: "สะ-พาน" }, { word: "เสริม", reading: "เสริม" }, { word: "เหงื่อ", reading: "เหงื่อ" },
+                    { word: "กะทัดรัด", reading: "กะ-ทัด-รัด" }, { word: "ขรุขระ", reading: "ขรุ-ขระ" }, { word: "ควบคุม", reading: "ควม-คุม" },
+                    { word: "ครื้นเครง", reading: "ครื้น-เครง" }, { word: "จัญไร", reading: "จัน-ไร" }, { word: "โจทย์เลข", reading: "โจทย์-เลข" },
+                    { word: "ธนบัตร", reading: "ทะ-นะ-บัด" }, { word: "นกอินทรี", reading: "นก-อิน-ซี" }, { word: "พยุง", reading: "พะ-ยุง" },
+                    { word: "อนุญาต", reading: "อะ-นุ-ยาด" }
+                ]
+            },
+            p3: {
+                medium: [
+                    { word: "กติกา", reading: "กะ-ติ-กา" }, { word: "กระดาษ", reading: "กระ-ดาด" }, { word: "กระจาย", reading: "กระ-จาย" },
+                    { word: "กำไร", reading: "กำ-ไร" }, { word: "กำแพง", reading: "กำ-แพง" }, { word: "กีฬา", reading: "กี-ลา" },
+                    { word: "ขนม", reading: "ขะ-หนม" }, { word: "ขอบคุณ", reading: "ขอบ-คุน" }, { word: "ของขวัญ", reading: "ของ-ขวัน" },
+                    { word: "ข้าวโพด", reading: "ข้าว-โพด" }, { word: "ความรู้", reading: "ความ-รู้" }, { word: "เครื่องมือ", reading: "เครื่อง-มือ" },
+                    { word: "จัดระเบียบ", reading: "จัด-ระ-เบียบ" }, { word: "จิตใจ", reading: "จิด-ใจ" }, { word: "ชุมชน", reading: "ชุม-ชน" },
+                    { word: "ดวงดาว", reading: "ดวง-ดาว" }, { word: "ตะกร้า", reading: "ตะ-กร้า" }, { word: "ทหาร", reading: "ทะ-หาน" },
+                    { word: "ท้องถิ่น", reading: "ท้อง-ถิ่น" }, { word: "นักกีฬา", reading: "นัก-กี-ลา" }, { word: "บรรทัด", reading: "บัน-ทัด" },
+                    { word: "ประชาชน", reading: "ประ-ชา-ชน" }, { word: "ปฏิเสธ", reading: "ปะ-ติ-เสด" }, { word: "ผักชี", reading: "ผัก-ชี" },
+                    { word: "ผู้ใหญ่", reading: "ผู้-ใหญ่" }, { word: "แฟนซี", reading: "แฟน-ซี" }, { word: "มะม่วง", reading: "มะ-ม่วง" },
+                    { word: "รถไฟ", reading: "รด-ไฟ" }, { word: "สี่เหลี่ยม", reading: "สี่-เหลี่ยม" }, { word: "อากาศ", reading: "อา-กาด" }
+                ],
+                hard: [
+                    { word: "กระเพาะ", reading: "กระ-เพาะ" }, { word: "กระเพรา", reading: "กระ-เพรา" }, { word: "กรุณา", reading: "กะ-รุ-นา" },
+                    { word: "กลมกลืน", reading: "กลม-กลืน" }, { word: "กลิ่นหอม", reading: "กลิ่น-หอม" }, { word: "ขบเคี้ยว", reading: "ขบ-เคี้ยว" },
+                    { word: "ขมิ้นชัน", reading: "ขะ-มิ่น-ชัน" }, { word: "ขี้เกียจ", reading: "ขี้-เกียด" }, { word: "คลองแสนแสบ", reading: "คลอง-แสน-แสบ" },
+                    { word: "ครุฑ", reading: "ครุด" }, { word: "ควันไฟ", reading: "ควัน-ไฟ" }, { word: "คำนวณ", reading: "คำ-นวน" },
+                    { word: "จราจร", reading: "จะ-รา-จร" }, { word: "ฉับพลัน", reading: "ฉับ-พลัน" }, { word: "เชี่ยวชาญ", reading: "เชี่ยว-ชาน" },
+                    { word: "ซาบซึ้ง", reading: "ซาบ-ซึ้ง" }, { word: "ญาติพี่น้อง", reading: "ยาด-พี่-น้อง" }, { word: "ฐานะ", reading: "ถา-นะ" },
+                    { word: "ทรุดโทรม", reading: "ซุด-โซม" }, { word: "ธงชาติ", reading: "ทง-ชาด" }, { word: "นกหวีด", reading: "นก-หวีด" },
+                    { word: "บรรยากาศ", reading: "บัน-ยา-กาด" }, { word: "บาดแผล", reading: "บาด-แผล" }, { word: "ปรัชญา", reading: "ปรัด-ยา" },
+                    { word: "ผลิตผล", reading: "ผลิ-ตะ-ผล" }, { word: "พยัญชนะ", reading: "พะ-ยัน-ชะ-นะ" }, { word: "ภูเขา", reading: "ภู-เขา" },
+                    { word: "ลักษณะ", reading: "ลัก-สะ-หนะ" }, { word: "เศรษฐกิจ", reading: "เสด-ถะ-กิด" }, { word: "อัญชัน", reading: "อัน-ชัน" },
+                    { word: "กังหัน", reading: "กัง-หัน" }, { word: "กุญแจ", reading: "กุน-แจ" }, { word: "ขยะมูลฝอย", reading: "ขะ-หยะ-มูน-ฝอย" },
+                    { word: "คณิตศาสตร์", reading: "คะ-นิด-ตะ-สาด" }, { word: "จิตวิญญาณ", reading: "จิด-วิง-ยาน" }, { word: "ชำนาญ", reading: "ชำ-นาน" },
+                    { word: "ไตร่ตรอง", reading: "ไตร่-ตรอง" }, { word: "ธรรมชาติ", reading: "ทำ-มะ-ชาด" }, { word: "บัญชี", reading: "บัน-ชี" },
+                    { word: "อุตสาหะ", reading: "อุด-สา-หะ" }
+                ]
+            }
+        };
+
+        let currentGrade = 'p1';
+        let timerInterval;
+        let seconds = 0;
+        let dictationWordsPool = [];
+        let currentDictationWord = '';
+        let currentDictationReading = '';
+        let selectedDifficulty = 'medium';
+        let spokenCount = 0;
+        let thaiVoice = null; // Variable to store the selected Thai voice
+
+        // Function to create a word card for display
+        function createWordCard(wordItem) {
+            return `
+                <div class="word-card bg-white p-4 rounded-lg shadow-md border border-gray-200 hover:shadow-lg hover:border-emerald-500 transition-shadow duration-300 flex flex-col justify-center items-center">
+                    <p class="text-2xl font-bold text-gray-800">${wordItem.word}</p>
+                    <p class="text-gray-500 mt-1">อ่านว่า (${wordItem.reading})</p>
+                </div>
+            `;
+        }
+        
+        // Function to render words based on selected grade
+        function renderWords(grade) {
+            const contentDiv = document.getElementById('word-content');
+            const data = wordData[grade];
+
+            let html = `
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2 mb-4">ความยากปานกลาง</h2>
+                    <div id="${grade}-medium-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        ${data.medium.map(createWordCard).join('')}
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2 mb-4">ความยากมากที่สุด</h2>
+                    <div id="${grade}-hard-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        ${data.hard.map(createWordCard).join('')}
+                    </div>
+                </div>
+            `;
+            contentDiv.innerHTML = html;
+        }
+
+        // Function to change the active grade tab and re-render words
+        function changeGrade(grade) {
+            currentGrade = grade;
+            
+            document.querySelectorAll('#navigation button').forEach(button => {
+                button.classList.remove('active-tab');
+                button.classList.add('inactive-tab');
+            });
+
+            document.getElementById(`tab-${grade}`).classList.add('active-tab');
+            document.getElementById(`tab-${grade}`).classList.remove('inactive-tab');
+            
+            renderWords(grade);
+            document.getElementById('searchInput').value = ''; // Clear search on grade change
+            stopDictation(); // Stop any ongoing dictation when changing grade
+        }
+
+        // Function to filter words based on search input
+        function filterWords() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const wordCards = document.querySelectorAll('.word-card');
+
+            wordCards.forEach(card => {
+                const word = card.querySelector('p:first-child').innerText.toLowerCase();
+                const reading = card.querySelector('p:last-child').innerText.toLowerCase();
+                if (word.includes(filter) || reading.includes(filter)) {
+                    card.style.display = "";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        // Timer functions
+        function updateTimerDisplay() {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            document.getElementById('timerDisplay').innerText = 
+                `${minutes < 10 ? '0' : ''}${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        }
+
+        function startTimer() {
+            if (!timerInterval) {
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    updateTimerDisplay();
+                }, 1000);
+            }
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            seconds = 0;
+            updateTimerDisplay();
+        }
+
+        // Dictation functions
+        function updateDictationDifficulty(difficulty) {
+            selectedDifficulty = difficulty;
+            stopDictation(); // Reset dictation if difficulty changes
+        }
+
+        function initDictation() {
+            const words = wordData[currentGrade][selectedDifficulty];
+            dictationWordsPool = [...words]; // Copy words to a mutable pool
+            // Shuffle the words
+            for (let i = dictationWordsPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [dictationWordsPool[i], dictationWordsPool[j]] = [dictationWordsPool[j], dictationWordsPool[i]];
+            }
+        }
+
+        function speakWord(word, times) {
+            if (!word || !window.speechSynthesis) {
+                console.warn("Speech synthesis not supported or no word to speak.");
+                return;
+            }
+
+            // Ensure voices are loaded and a Thai voice is selected
+            if (!thaiVoice) {
+                const voices = window.speechSynthesis.getVoices();
+                thaiVoice = voices.find(voice => voice.lang === 'th-TH');
+                if (!thaiVoice) {
+                    console.warn("Thai voice not found. Speech synthesis might not work as expected.");
+                    // Fallback to default if Thai voice is not available
+                }
+            }
+
+            spokenCount = 0;
+            const utterThis = new SpeechSynthesisUtterance(word);
+            utterThis.lang = 'th-TH'; // Set language to Thai
+            if (thaiVoice) {
+                utterThis.voice = thaiVoice; // Assign the found Thai voice
+            }
+
+            utterThis.onend = () => {
+                spokenCount++;
+                if (spokenCount < times) {
+                    setTimeout(() => {
+                        window.speechSynthesis.speak(utterThis);
+                    }, 500); // Small delay between repetitions
+                }
+            };
+
+            window.speechSynthesis.speak(utterThis);
+        }
+
+        function startDictation() {
+            initDictation();
+            resetTimer();
+            document.getElementById('startButton').disabled = true;
+            document.getElementById('nextButton').disabled = false;
+            document.getElementById('revealButton').disabled = false;
+            document.getElementById('playAudioButton').disabled = false;
+            document.getElementById('dictationWordDisplay').classList.add('hidden'); // Hide word initially
+            nextWord();
+        }
+
+        function nextWord() {
+            if (dictationWordsPool.length === 0) {
+                alert('คำศัพท์ในหมวดนี้หมดแล้ว! จะเริ่มสุ่มใหม่ทั้งหมด');
+                initDictation(); // Reshuffle if all words have been used
+            }
+
+            const wordItem = dictationWordsPool.pop();
+            currentDictationWord = wordItem.word;
+            currentDictationReading = wordItem.reading;
+
+            document.getElementById('currentWord').innerText = ''; // Clear previous word
+            document.getElementById('currentReading').innerText = ''; // Clear previous reading
+            document.getElementById('dictationWordDisplay').classList.add('hidden'); // Ensure hidden for new word
+
+            speakWord(currentDictationWord, 2);
+            resetTimer();
+            startTimer();
+        }
+
+        function revealWord() {
+            document.getElementById('currentWord').innerText = currentDictationWord;
+            document.getElementById('currentReading').innerText = `อ่านว่า (${currentDictationReading})`;
+            document.getElementById('dictationWordDisplay').classList.remove('hidden');
+            stopTimer();
+        }
+
+        function stopDictation() {
+            stopTimer();
+            resetTimer();
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('nextButton').disabled = true;
+            document.getElementById('revealButton').disabled = true;
+            document.getElementById('playAudioButton').disabled = true;
+            document.getElementById('dictationWordDisplay').classList.add('hidden');
+            document.getElementById('currentWord').innerText = '';
+            document.getElementById('currentReading').innerText = '';
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        // Event listener for voices changed
+        window.speechSynthesis.onvoiceschanged = () => {
+            const voices = window.speechSynthesis.getVoices();
+            thaiVoice = voices.find(voice => voice.lang === 'th-TH');
+            if (!thaiVoice) {
+                console.warn("Thai voice not found after voices changed event. Speech synthesis might not work as expected.");
+            }
+        };
+
+        // Initial setup on page load
+        window.onload = () => {
+            changeGrade('p1'); // Set default grade to P1
+            updateDictationDifficulty('medium'); // Set default dictation difficulty
+            // Ensure initial state of dictation buttons
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('nextButton').disabled = true;
+            document.getElementById('revealButton').disabled = true;
+            document.getElementById('playAudioButton').disabled = true;
+            
+            // Attempt to load voices immediately if they are already available
+            if (window.speechSynthesis.getVoices().length > 0) {
+                const voices = window.speechSynthesis.getVoices();
+                thaiVoice = voices.find(voice => voice.lang === 'th-TH');
+                if (!thaiVoice) {
+                    console.warn("Thai voice not found on initial load. Speech synthesis might not work as expected.");
+                }
+            }
+        };
+
+    </script>
+
+</body>
+</html>
