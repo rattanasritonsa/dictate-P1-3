@@ -3,455 +3,1495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>คลังคำศัพท์พื้นฐานสำหรับเขียนตามคำบอก</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>แอปเขียนตามคำบอก</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Calm Neutrals (background: stone-50, cards: white, accent: emerald-600) -->
-    <!-- Application Structure Plan: A single-page application using a tab-based navigation for grade levels (ป.1, ป.2, ป.3). This structure is user-friendly and allows quick access to specific content without scrolling through a long list. Each grade's section contains the two difficulty levels ("ปานกลาง" and "ยากที่สุด") displayed in a responsive grid of cards. A search bar provides instant filtering, enhancing usability for finding specific words. The new dictation section includes a timer, word display, and controls for starting, getting the next word, revealing the word, and playing audio. This design prioritizes fast, targeted information retrieval and interactive dictation practice. -->
-    <!-- Visualization & Content Choices: Report Info: Hierarchical list of spelling words. Goal: Organize and allow easy exploration, plus interactive dictation. Viz/Presentation Method: Interactive word bank using HTML/CSS cards in a grid for exploration. For dictation, a dynamic word display, timer, and audio playback. Interaction: Grade selection via buttons, live search filtering, dictation controls (start, next, reveal, play audio). Justification: Cards are clear for word presentation. Tabbed navigation and search are intuitive for filtering. Dictation features provide a practical, interactive learning tool. Library/Method: Vanilla JavaScript for logic, Tailwind CSS for styling. Chart.js/Plotly.js are not used as they are not relevant for this application's functionality. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* --- General Styling --- */
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --success-color: #28a745;
+            --success-hover: #218838;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --warning-hover: #e0a800;
+            --light-bg: #f8f9fa;
+            --dark-text: #343a40;
+            --light-text: #ffffff;
+            --border-color: #dee2e6;
+        }
+
         body {
             font-family: 'Sarabun', sans-serif;
-            background-color: #f8fafc; /* slate-50 */
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
         }
-        .active-tab {
-            background-color: #059669; /* emerald-600 */
-            color: white;
-            border-color: #059669; /* emerald-600 */
+
+        /* --- Main Container --- */
+        .container {
+            background-color: var(--light-text);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
         }
-        .inactive-tab {
-            background-color: white;
-            color: #374151; /* gray-700 */
-            border-color: #d1d5db; /* gray-300 */
+
+        h1 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
         }
-        .difficulty-radio input[type="radio"]:checked + span {
-            background-color: #059669; /* emerald-600 */
-            color: white;
-            border-color: #059669; /* emerald-600 */
+
+        #progress {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+        }
+
+        /* --- Dictation Box --- */
+        .dictation-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .dictation-box p {
+            margin: 0 0 0.5rem 0;
+            color: #6c757d;
+        }
+
+        #play-btn {
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+
+        #play-btn:hover {
+            background-color: var(--primary-hover);
+            transform: scale(1.05);
+        }
+        
+        #play-btn svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        #answer-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            font-size: 1.2rem;
+            font-family: 'Sarabun', sans-serif;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            text-align: center;
+            transition: border-color 0.3s ease;
+        }
+
+        #answer-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 1.1rem;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            width: 100%;
+            color: var(--light-text);
+        }
+
+        #check-btn {
+            background-color: var(--success-color);
+        }
+
+        #check-btn:hover {
+            background-color: var(--success-hover);
+        }
+
+        #next-btn {
+            background-color: var(--warning-color);
+            color: var(--dark-text);
+        }
+
+        #next-btn:hover {
+            background-color: var(--warning-hover);
+        }
+
+        /* --- Feedback Area --- */
+        #feedback {
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            min-height: 80px;
+            padding: 1rem;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+
+        .correct {
+            color: var(--success-color);
+            font-weight: bold;
+            background-color: #e9f7ef;
+            border: 1px solid var(--success-color);
+        }
+
+        .incorrect {
+            color: var(--danger-color);
+            font-weight: bold;
+            background-color: #fceeed;
+            border: 1px solid var(--danger-color);
+        }
+        
+        .incorrect p {
+            margin: 0.2rem 0;
+        }
+        
+        .incorrect strong {
+            color: var(--dark-text);
+        }
+
+        /* --- Utility --- */
+        .hidden {
+            display: none;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-gray-800">
+<body>
 
-    <div class="container mx-auto p-4 sm:p-6 md:p-8">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-emerald-700">คลังคำศัพท์พื้นฐาน</h1>
-            <p class="text-lg text-gray-600 mt-2">สำหรับฝึกเขียนตามคำบอก ชั้น ป.1 - ป.3</p>
-        </header>
+    <div class="container">
+        <h1>แอปพลิเคชันเขียนตามคำบอก ✍️</h1>
+        <div id="progress">กำลังโหลด...</div>
 
-        <main>
-            <div class="mb-6 p-4 bg-white rounded-lg shadow">
-                 <p class="text-gray-700 text-center">
-                    แอปพลิเคชันนี้ได้รวบรวมคำศัพท์พื้นฐานตามหลักสูตรกระทรวงศึกษาธิการสำหรับนักเรียนชั้นประถมศึกษาปีที่ 1 ถึง 3 โดยแบ่งตามระดับชั้นและความยากง่าย คุณสามารถเลือกดูคำศัพท์ตามชั้นเรียน และใช้ช่องค้นหาเพื่อกรองคำที่ต้องการได้อย่างรวดเร็ว เหมาะสำหรับใช้เป็นเครื่องมือในการฝึกฝนการเขียนและอ่านให้แม่นยำยิ่งขึ้น
-                </p>
-            </div>
+        <div class="dictation-box">
+            <p>กดปุ่มรูปลำโพงเพื่อฟังเสียง แล้วพิมพ์คำตอบของคุณ</p>
+            <button id="play-btn" title="ฟังเสียง">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
+            <input type="text" id="answer-input" placeholder="พิมพ์คำตอบที่นี่..." autocomplete="off">
+            <button id="check-btn" class="btn">ตรวจคำตอบ</button>
+            <button id="next-btn" class="btn hidden">ข้อต่อไป</button>
+        </div>
 
-            <div id="navigation" class="flex justify-center items-center gap-2 sm:gap-4 mb-6">
-                <button onclick="changeGrade('p1')" id="tab-p1" class="w-full sm:w-auto text-lg font-bold py-2 px-6 rounded-lg transition-colors duration-300 border-2">
-                    ชั้น ป.1
-                </button>
-                <button onclick="changeGrade('p2')" id="tab-p2" class="w-full sm:w-auto text-lg font-bold py-2 px-6 rounded-lg transition-colors duration-300 border-2">
-                    ชั้น ป.2
-                </button>
-                <button onclick="changeGrade('p3')" id="tab-p3" class="w-full sm:w-auto text-lg font-bold py-2 px-6 rounded-lg transition-colors duration-300 border-2">
-                    ชั้น ป.3
-                </button>
-            </div>
-
-            <div class="sticky top-2 z-10 mb-8">
-                <div class="relative">
-                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
-                        </svg>
-                    </span>
-                    <input type="text" id="searchInput" onkeyup="filterWords()" placeholder="ค้นหาคำศัพท์..." class="w-full p-3 pl-10 text-lg border-2 border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 shadow-sm">
-                </div>
-            </div>
-
-            <div id="word-content" class="mb-12">
-            </div>
-
-            <section class="bg-white p-6 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2 mb-4">ฝึกเขียนตามคำบอก</h2>
-                <p class="text-gray-700 mb-4">
-                    เลือกความยากของคำศัพท์ที่ต้องการฝึก จากนั้นกด "เริ่มเขียนตามคำบอก" ระบบจะสุ่มคำและออกเสียงให้ฟัง 2 ครั้ง คุณสามารถกด "คำต่อไป" เพื่อสุ่มคำใหม่ หรือ "เฉลยคำ" เพื่อดูคำศัพท์และคำอ่าน
-                </p>
-
-                <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
-                    <div class="flex gap-4 difficulty-radio">
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="radio" name="difficulty" value="medium" class="hidden" checked onchange="updateDictationDifficulty(this.value)">
-                            <span class="px-4 py-2 rounded-lg border-2 border-gray-300 font-medium transition-colors duration-300">ความยากปานกลาง</span>
-                        </label>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="radio" name="difficulty" value="hard" class="hidden" onchange="updateDictationDifficulty(this.value)">
-                            <span class="px-4 py-2 rounded-lg border-2 border-gray-300 font-medium transition-colors duration-300">ความยากมากที่สุด</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="flex flex-col items-center gap-4 mb-6">
-                    <div id="timerDisplay" class="text-5xl font-mono text-emerald-700 mb-4 p-4 bg-emerald-50 rounded-lg shadow-inner w-full text-center max-w-xs">00:00</div>
-                    
-                    <div id="dictationWordDisplay" class="hidden flex-col items-center p-6 bg-emerald-100 rounded-lg shadow-inner w-full max-w-md">
-                        <p class="text-4xl font-bold text-emerald-800 mb-2" id="currentWord"></p>
-                        <p class="text-xl text-emerald-600" id="currentReading"></p>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap justify-center gap-4">
-                    <button id="startButton" onclick="startDictation()" class="bg-emerald-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-emerald-700 transition-colors duration-300">
-                        เริ่มเขียนตามคำบอก
-                    </button>
-                    <button id="nextButton" onclick="nextWord()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-300" disabled>
-                        คำต่อไป
-                    </button>
-                    <button id="revealButton" onclick="revealWord()" class="bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-yellow-700 transition-colors duration-300" disabled>
-                        เฉลยคำ
-                    </button>
-                    <button id="playAudioButton" onclick="speakWord(currentDictationWord, 2)" class="bg-purple-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-purple-700 transition-colors duration-300" disabled>
-                        ฟังอีกครั้ง
-                    </button>
-                </div>
-            </section>
-        </main>
+        <div id="feedback"></div>
     </div>
 
     <script>
-        const wordData = {
-            p1: {
-                medium: [
-                    { word: "กบ", reading: "กบ" }, { word: "กา", reading: "กา" }, { word: "กิน", reading: "กิน" },
-                    { word: "เงิน", reading: "เงิน" }, { word: "จาน", reading: "จาน" }, { word: "จริง", reading: "จิง" },
-                    { word: "ใจดี", reading: "ใจ-ดี" }, { word: "ช้าง", reading: "ช้าง" }, { word: "ดอกไม้", reading: "ดอก-ไม้" },
-                    { word: "ดินสอ", reading: "ดิน-สอ" }, { word: "เด็ก", reading: "เด็ก" }, { word: "เต่า", reading: "เต่า" },
-                    { word: "ถุง", reading: "ถุง" }, { word: "นก", reading: "นก" }, { word: "น้ำ", reading: "น้ำ" },
-                    { word: "บ้าน", reading: "บ้าน" }, { word: "ปู", reading: "ปู" }, { word: "ผม", reading: "ผม" },
-                    { word: "ผีเสื้อ", reading: "ผี-เสื้อ" }, { word: "ฝน", reading: "ฝน" }, { word: "พ่อ", reading: "พ่อ" },
-                    { word: "แม่", reading: "แม่" }, { word: "มะลิ", reading: "มะ-ลิ" }, { word: "มือ", reading: "มือ" },
-                    { word: "ร้อง", reading: "ร้อง" }, { word: "รองเท้า", reading: "รอง-เท้า" }, { word: "ลิง", reading: "ลิง" },
-                    { word: "วัด", reading: "วัด" }, { word: "หมี", reading: "หมี" }, { word: "หู", reading: "หู" }
-                ],
-                hard: [
-                    { word: "กระต่าย", reading: "กระ-ต่าย" }, { word: "กางเกง", reading: "กาง-เกง" }, { word: "กะทิ", reading: "กะ-ทิ" },
-                    { word: "กระจก", reading: "กระ-จก" }, { word: "กรรไกร", reading: "กัน-ไกร" }, { word: "กระเป๋า", reading: "กระ-เป๋า" },
-                    { word: "ข้าว", reading: "ข้าว" }, { word: "เขียน", reading: "เขียน" }, { word: "คุณครู", reading: "คุน-ครู" },
-                    { word: "จระเข้", reading: "จอ-ระ-เข้" }, { word: "จังหวัด", reading: "จัง-หวัด" }, { word: "ฉลาม", reading: "ฉะ-หลาม" },
-                    { word: "ช้อน", reading: "ช้อน" }, { word: "ดื่ม", reading: "ดื่ม" }, { word: "ตลาด", reading: "ตะ-หลาด" },
-                    { word: "ตุ๊กตา", reading: "ตุ๊ก-กะ-ตา" }, { word: "ถนน", reading: "ถะ-หนน" }, { word: "น้ำแข็ง", reading: "น้ำ-แข็ง" },
-                    { word: "บิน", reading: "บิน" }, { word: "ประตู", reading: "ประ-ตู" }, { word: "ผลไม้", reading: "ผล-ละ-ไม้" },
-                    { word: "พริก", reading: "พริก" }, { word: "โรงเรียน", reading: "โรง-เรียน" }, { word: "รถยนต์", reading: "รด-ยน" },
-                    { word: "ลูกโป่ง", reading: "ลูก-โป่ง" }, { word: "ส้ม", reading: "ส้ม" }, { word: "สัปปะรด", reading: "สับ-ปะ-รด" },
-                    { word: "หนังสือ", reading: "หนัง-สือ" }, { word: "หมวก", reading: "หมวก" }, { word: "เสื้อ", reading: "เสื้อ" },
-                    { word: "กะหล่ำปลี", reading: "กะ-หล่ำ-ปลี" }, { word: "ข้าวหลาม", reading: "ข้าว-หลาม" }, { word: "เครื่องเขียน", reading: "เครื่อง-เขียน" },
-                    { word: "ฉันทนา", reading: "ฉัน-ทะ-นา" }, { word: "ช็อกโกแลต", reading: "ช็อก-โก-แลต" }, { word: "ตะเกียบ", reading: "ตะ-เกียบ" },
-                    { word: "ปรากฏ", reading: "ปรา-กด" }, { word: "พยุง", reading: "พะ-ยุง" }, { word: "สมุด", reading: "สะ-หมุด" },
-                    { word: "หนอน", reading: "หนอน" }
-                ]
-            },
-            p2: {
-                medium: [
-                    { word: "กระถาง", reading: "กระ-ถาง" }, { word: "กระรอก", reading: "กระ-รอก" }, { word: "กะปิ", reading: "กะ-ปิ" },
-                    { word: "กำแพง", reading: "กำ-แพง" }, { word: "กุ้ง", reading: "กุ้ง" }, { word: "เก้าอี้", reading: "เก้า-อี้" },
-                    { word: "ขวด", reading: "ขวด" }, { word: "ความดี", reading: "ความ-ดี" }, { word: "คลื่น", reading: "คลื่น" },
-                    { word: "คลุม", reading: "คลุม" }, { word: "จมูก", reading: "จะ-หมูก" }, { word: "ฉัน", reading: "ฉัน" },
-                    { word: "ชมพู่", reading: "ชม-พู่" }, { word: "ช่วยเหลือ", reading: "ช่วย-เหลือ" }, { word: "ดอกบัว", reading: "ดอก-บัว" },
-                    { word: "ตะวัน", reading: "ตะ-วัน" }, { word: "ตั้งใจ", reading: "ตั้ง-ใจ" }, { word: "ท้องฟ้า", reading: "ท้อง-ฟ้า" },
-                    { word: "ท่องเที่ยว", reading: "ท่อง-เที่ยว" }, { word: "ทะเล", reading: "ทะ-เล" }, { word: "ทราย", reading: "ทราย" },
-                    { word: "นักเรียน", reading: "นัก-เรียน" }, { word: "นิทาน", reading: "นิ-ทาน" }, { word: "ประจำ", reading: "ประ-จำ" },
-                    { word: "ปีก", reading: "ปีก" }, { word: "ผ้าเช็ดตัว", reading: "ผ้า-เช็ด-ตัว" }, { word: "ฝั่ง", reading: "ฝั่ง" },
-                    { word: "เมฆ", reading: "เมก" }, { word: "รองเท้า", reading: "รอง-เท้า" }, { word: "สัญญา", reading: "สัน-ยา" }
-                ],
-                hard: [
-                    { word: "กตัญญู", reading: "กะ-ตัน-ยู" }, { word: "กล้วย", reading: "กล้วย" }, { word: "กว้างขวาง", reading: "กว้าง-ขวาง" },
-                    { word: "ขยัน", reading: "ขะ-หยัน" }, { word: "ขรุขระ", reading: "ขรุ-ขระ" }, { word: "ขลุ่ย", reading: "ขลุ่ย" },
-                    { word: "ขึ้นฉ่าย", reading: "ขึ้น-ฉ่าย" }, { word: "คลอด", reading: "คลอด" }, { word: "ครอบครัว", reading: "ครอบ-ครัว" },
-                    { word: "คลื่นไส้", reading: "คลื่น-ไส้" }, { word: "เครื่องบิน", reading: "เครื่อง-บิน" }, { word: "เงียบ", reading: "เงียบ" },
-                    { word: "จิ้งจก", reading: "จิ้ง-จก" }, { word: "ชั่วคราว", reading: "ชั่ว-คราว" }, { word: "ตรวจสอบ", reading: "ตรวจ-สอบ" },
-                    { word: "ถั่ว", reading: "ถั่ว" }, { word: "ถนน", reading: "ถะ-หนน" }, { word: "เทียนไข", reading: "เทียน-ไข" },
-                    { word: "เนื้อหมู", reading: "เนื้อ-หมู" }, { word: "บทเรียน", reading: "บด-เรียน" }, { word: "ผักกาด", reading: "ผัก-กาด" },
-                    { word: "พืชผัก", reading: "พืด-ผัก" }, { word: "ฟุตบอล", reading: "ฟุด-บอน" }, { word: "มะพร้าว", reading: "มะ-พร้าว" },
-                    { word: "ยางลบ", reading: "ยาง-ลบ" }, { word: "รถจักรยาน", reading: "รด-จัก-กระ-ยาน" }, { word: "สลับ", reading: "สะ-หลับ" },
-                    { word: "สะพาน", reading: "สะ-พาน" }, { word: "เสริม", reading: "เสริม" }, { word: "เหงื่อ", reading: "เหงื่อ" },
-                    { word: "กะทัดรัด", reading: "กะ-ทัด-รัด" }, { word: "ขรุขระ", reading: "ขรุ-ขระ" }, { word: "ควบคุม", reading: "ควม-คุม" },
-                    { word: "ครื้นเครง", reading: "ครื้น-เครง" }, { word: "จัญไร", reading: "จัน-ไร" }, { word: "โจทย์เลข", reading: "โจทย์-เลข" },
-                    { word: "ธนบัตร", reading: "ทะ-นะ-บัด" }, { word: "นกอินทรี", reading: "นก-อิน-ซี" }, { word: "พยุง", reading: "พะ-ยุง" },
-                    { word: "อนุญาต", reading: "อะ-นุ-ยาด" }
-                ]
-            },
-            p3: {
-                medium: [
-                    { word: "กติกา", reading: "กะ-ติ-กา" }, { word: "กระดาษ", reading: "กระ-ดาด" }, { word: "กระจาย", reading: "กระ-จาย" },
-                    { word: "กำไร", reading: "กำ-ไร" }, { word: "กำแพง", reading: "กำ-แพง" }, { word: "กีฬา", reading: "กี-ลา" },
-                    { word: "ขนม", reading: "ขะ-หนม" }, { word: "ขอบคุณ", reading: "ขอบ-คุน" }, { word: "ของขวัญ", reading: "ของ-ขวัน" },
-                    { word: "ข้าวโพด", reading: "ข้าว-โพด" }, { word: "ความรู้", reading: "ความ-รู้" }, { word: "เครื่องมือ", reading: "เครื่อง-มือ" },
-                    { word: "จัดระเบียบ", reading: "จัด-ระ-เบียบ" }, { word: "จิตใจ", reading: "จิด-ใจ" }, { word: "ชุมชน", reading: "ชุม-ชน" },
-                    { word: "ดวงดาว", reading: "ดวง-ดาว" }, { word: "ตะกร้า", reading: "ตะ-กร้า" }, { word: "ทหาร", reading: "ทะ-หาน" },
-                    { word: "ท้องถิ่น", reading: "ท้อง-ถิ่น" }, { word: "นักกีฬา", reading: "นัก-กี-ลา" }, { word: "บรรทัด", reading: "บัน-ทัด" },
-                    { word: "ประชาชน", reading: "ประ-ชา-ชน" }, { word: "ปฏิเสธ", reading: "ปะ-ติ-เสด" }, { word: "ผักชี", reading: "ผัก-ชี" },
-                    { word: "ผู้ใหญ่", reading: "ผู้-ใหญ่" }, { word: "แฟนซี", reading: "แฟน-ซี" }, { word: "มะม่วง", reading: "มะ-ม่วง" },
-                    { word: "รถไฟ", reading: "รด-ไฟ" }, { word: "สี่เหลี่ยม", reading: "สี่-เหลี่ยม" }, { word: "อากาศ", reading: "อา-กาด" }
-                ],
-                hard: [
-                    { word: "กระเพาะ", reading: "กระ-เพาะ" }, { word: "กระเพรา", reading: "กระ-เพรา" }, { word: "กรุณา", reading: "กะ-รุ-นา" },
-                    { word: "กลมกลืน", reading: "กลม-กลืน" }, { word: "กลิ่นหอม", reading: "กลิ่น-หอม" }, { word: "ขบเคี้ยว", reading: "ขบ-เคี้ยว" },
-                    { word: "ขมิ้นชัน", reading: "ขะ-มิ่น-ชัน" }, { word: "ขี้เกียจ", reading: "ขี้-เกียด" }, { word: "คลองแสนแสบ", reading: "คลอง-แสน-แสบ" },
-                    { word: "ครุฑ", reading: "ครุด" }, { word: "ควันไฟ", reading: "ควัน-ไฟ" }, { word: "คำนวณ", reading: "คำ-นวน" },
-                    { word: "จราจร", reading: "จะ-รา-จร" }, { word: "ฉับพลัน", reading: "ฉับ-พลัน" }, { word: "เชี่ยวชาญ", reading: "เชี่ยว-ชาน" },
-                    { word: "ซาบซึ้ง", reading: "ซาบ-ซึ้ง" }, { word: "ญาติพี่น้อง", reading: "ยาด-พี่-น้อง" }, { word: "ฐานะ", reading: "ถา-นะ" },
-                    { word: "ทรุดโทรม", reading: "ซุด-โซม" }, { word: "ธงชาติ", reading: "ทง-ชาด" }, { word: "นกหวีด", reading: "นก-หวีด" },
-                    { word: "บรรยากาศ", reading: "บัน-ยา-กาด" }, { word: "บาดแผล", reading: "บาด-แผล" }, { word: "ปรัชญา", reading: "ปรัด-ยา" },
-                    { word: "ผลิตผล", reading: "ผลิ-ตะ-ผล" }, { word: "พยัญชนะ", reading: "พะ-ยัน-ชะ-นะ" }, { word: "ภูเขา", reading: "ภู-เขา" },
-                    { word: "ลักษณะ", reading: "ลัก-สะ-หนะ" }, { word: "เศรษฐกิจ", reading: "เสด-ถะ-กิด" }, { word: "อัญชัน", reading: "อัน-ชัน" },
-                    { word: "กังหัน", reading: "กัง-หัน" }, { word: "กุญแจ", reading: "กุน-แจ" }, { word: "ขยะมูลฝอย", reading: "ขะ-หยะ-มูน-ฝอย" },
-                    { word: "คณิตศาสตร์", reading: "คะ-นิด-ตะ-สาด" }, { word: "จิตวิญญาณ", reading: "จิด-วิง-ยาน" }, { word: "ชำนาญ", reading: "ชำ-นาน" },
-                    { word: "ไตร่ตรอง", reading: "ไตร่-ตรอง" }, { word: "ธรรมชาติ", reading: "ทำ-มะ-ชาด" }, { word: "บัญชี", reading: "บัน-ชี" },
-                    { word: "อุตสาหะ", reading: "อุด-สา-หะ" }
-                ]
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Database of all words ---
+            const words = [
+                { word: 'ก ข ไม่กระดิกหู', reading: 'กอ ขอ ไม่ กะ-ดิก หู' },
+                { word: 'กฎกติกา', reading: 'กด-กะ-ติ-กา' },
+                { word: 'กฎหมาย', reading: 'กด-หมาย' },
+                { word: 'กติกา', reading: 'กะ-ติ-กา' },
+                { word: 'กรรไกร', reading: 'กัน-ไกร' },
+                { word: 'กระจ้อยร่อย', reading: 'กระ-จ้อย-ร่อย' },
+                { word: 'กระจิริดสิทธิศักดิ์', reading: 'กระ-จิ-ริด-สิด-ทิ-สัก' },
+                { word: 'กระชาก', reading: 'กระ-ชาก' },
+                { word: 'กระดาษ', reading: 'กระ-ดาด' },
+                { word: 'กระต่าย', reading: 'กระ-ต่าย' },
+                { word: 'กระต่ายขาเดียว', reading: 'กระ-ต่าย-ขา-เดียว' },
+                { word: 'กระต่ายตื่นตูม', reading: 'กระ-ต่าย-ตื่น-ตูม' },
+                { word: 'กระต่ายสามขา', reading: 'กระ-ต่าย-สาม-ขา' },
+                { word: 'กระต่ายหมายจันทร์', reading: 'กระ-ต่าย-หมาย-จัน' },
+                { word: 'กระต่ายแหย่เสือ', reading: 'กระ-ต่าย-แหย่-เสือ' },
+                { word: 'กระติก', reading: 'กระ-ติก' },
+                { word: 'กระตือรือร้น', reading: 'กระ-ตือ-รือ-ร้น' },
+                { word: 'กระถาง', reading: 'กระ-ถาง' },
+                { word: 'กระทง', reading: 'กระ-ทง' },
+                { word: 'กระทะ', reading: 'กระ-ทะ' },
+                { word: 'กระทั่ง', reading: 'กระ-ทั่ง' },
+                { word: 'กระทั้น', reading: 'กระ-ทั้น' },
+                { word: 'กระแทก', reading: 'กระ-แทก' },
+                { word: 'กระบุง', reading: 'กระ-บุง' },
+                { word: 'กระเป๋า', reading: 'กระ-เป๋า' },
+                { word: 'กระพัง', reading: 'กระ-พัง' },
+                { word: 'กระมัง', reading: 'กระ-มัง' },
+                { word: 'กระวีกระวาด', reading: 'กระ-วี-กระ-วาด' },
+                { word: 'กระแสพระราชดำรัส', reading: 'กระ-แส-พระ-ราด-ชะ-ดำ-หรัด' },
+                { word: 'กระหม่อม', reading: 'กระ-หม่อม' },
+                { word: 'กราบทูล', reading: 'กราบ-ทูน' },
+                { word: 'กราบพระ', reading: 'กราบ-พระ' },
+                { word: 'กริ้ว', reading: 'กริ้ว' },
+                { word: 'กรี', reading: 'กะ-รี' },
+                { word: 'กรุงเทพฯ', reading: 'กรุง-เทบ-มะ-หา-นะ-คอน' },
+                { word: 'กรุณา', reading: 'กะ-รุ-นา' },
+                { word: 'กรู', reading: 'กรู' },
+                { word: 'กลไก', reading: 'กน-ไก' },
+                { word: 'กลมเกลียว', reading: 'กม-เกลียว' },
+                { word: 'กล้วยอ้อย', reading: 'กล้วย-อ้อย' },
+                { word: 'กลองหนัง', reading: 'กอง-หนัง' },
+                { word: 'กลอน', reading: 'กฺลอน' },
+                { word: 'กล่อม', reading: 'กล่อม' },
+                { word: 'กล่อมเกลา', reading: 'กล่อม-เกลา' },
+                { word: 'กลับ', reading: 'กฺลับ' },
+                { word: 'กลับกลาย', reading: 'กฺลับ-กฺลาย' },
+                { word: 'กลัว', reading: 'กฺลัว' },
+                { word: 'กล้า', reading: 'กฺล้า' },
+                { word: 'กลาง', reading: 'กฺลาง' },
+                { word: 'กล่าว', reading: 'กฺล่าว' },
+                { word: 'กล้าหาญ', reading: 'กฺล้า-หาน' },
+                { word: 'กลิ่น', reading: 'กฺลิ่น' },
+                { word: 'กวัดแกว่ง', reading: 'กฺวัด-แกว่ง' },
+                { word: 'กว้างขวาง', reading: 'กฺว้าง-ขฺวาง' },
+                { word: 'กองกลาง', reading: 'กอง-กฺาง' },
+                { word: 'ก้อนเสลา', reading: 'ก้อน-เส-ลา' },
+                { word: 'ก่ออิฐ', reading: 'ก่อ-อิด' },
+                { word: 'กะทัดรัด', reading: 'กะ-ทัด-รัด' },
+                { word: 'กะปิ', reading: 'กะ-ปิ' },
+                { word: 'กะพริบ', reading: 'กะ-พฺริบ' },
+                { word: 'กะหล่ำปลี', reading: 'กะ-หล่ำ-ปฺลี' },
+                { word: 'กั้ง', reading: 'กั้ง' },
+                { word: 'กันแสง', reading: 'กัน-แสง' },
+                { word: 'กัมปนาท', reading: 'กัม-ปะ-นาด' },
+                { word: 'กานท์', reading: 'กาน' },
+                { word: 'การขนส่ง', reading: 'กาน-ขน-ส่ง' },
+                { word: 'การคมนาคม', reading: 'กาน-คม-มะ-นา-คม' },
+                { word: 'การงาน', reading: 'กาน-งาน' },
+                { word: 'การ์ตูน', reading: 'การ์-ตูน' },
+                { word: 'การประมง', reading: 'กาน-ปฺระ-มง' },
+                { word: 'กาล', reading: 'กาน' },
+                { word: 'กาฬสินธุ์', reading: 'กา-ละ-สิน' },
+                { word: 'กิจกรรม', reading: 'กิด-จะ-กำ' },
+                { word: 'กิริยา', reading: 'กิ-ริ-ยา' },
+                { word: 'กี่', reading: 'กี่' },
+                { word: 'กุ้ง', reading: 'กุ้ง' },
+                { word: 'เก็บ', reading: 'เก็บ' },
+                { word: 'เกลี้ยกล่อม', reading: 'เกฺลี้ย-กฺล่อม' },
+                { word: 'เกลียวคลื่น', reading: 'เกฺลียว-คฺลื่น' },
+                { word: 'เกลือก', reading: 'เกฺลือก' },
+                { word: 'เกลื่อนกลาด', reading: 'เกฺลื่อน-กฺลาด' },
+                { word: 'เกษมศานต์', reading: 'กะ-เสม-สาน' },
+                { word: 'เกสร', reading: 'เก-สอน' },
+                { word: 'เกียรติ', reading: 'เกียด' },
+                { word: 'เกี่ยว', reading: 'เกี่ยว' },
+                { word: 'แกล้ง', reading: 'แกฺล้ง' },
+                { word: 'โกงกาง', reading: 'โกง-กาง' },
+                { word: 'โกรธ', reading: 'โกรด' },
+                { word: 'โกลี', reading: 'โก-ลี' },
+                { word: 'โกหก', reading: 'โก-หก' },
+                { word: 'ขณะ', reading: 'ขะ-หนะ' },
+                { word: 'ขนง', reading: 'ขะ-หนง' },
+                { word: 'ขนัด', reading: 'ขะ-หนัด' },
+                { word: 'ขนาด', reading: 'ขะ-หนาด' },
+                { word: 'ขนาดย่อม', reading: 'ขะ-หนาด-ย่อม' },
+                { word: 'ขนุน', reading: 'ขะ-หนุน' },
+                { word: 'ข่มเหง', reading: 'ข่ม-เหง' },
+                { word: 'ขม้ำ', reading: 'ขะ-ม้ำ' },
+                { word: 'ขมีขมัน', reading: 'ขะ-มี-ขะ-มัน' },
+                { word: 'ขโมย', reading: 'ขะ-โมย' },
+                { word: 'ขยะ', reading: 'ขะ-ยะ' },
+                { word: 'ขยัน', reading: 'ขะ-หฺยัน' },
+                { word: 'ขยับ', reading: 'ขะ-หฺยับ' },
+                { word: 'ขรุขระ', reading: 'ขฺรุ-ขฺระ' },
+                { word: 'ขลาดเขลา', reading: 'ขฺลาด-เขฺลา' },
+                { word: 'ขลุก', reading: 'ขฺลุก' },
+                { word: 'ขวนขวาย', reading: 'ขวน-ขวาย' },
+                { word: 'ขวักไขว่', reading: 'ขฺวัก-ไขฺว่' },
+                { word: 'ขอโทษ', reading: 'ขอ-โทด' },
+                { word: 'ขอบคุณ', reading: 'ขอบ-คุน' },
+                { word: 'ข้า', reading: 'ข้า' },
+                { word: 'ข่าย', reading: 'ข่าย' },
+                { word: 'ข้าวเหนียว', reading: 'ข้าว-เหฺนียว' },
+                { word: 'ข้าวเหนียวเปียก', reading: 'ข้าว-เหฺนียว-เปียก' },
+                { word: 'ขี่ช้างจับตั๊กแตน', reading: 'ขี่-ช้าง-จับ-ตั๊ก-กะ-แตน' },
+                { word: 'ขึ้นแท่น', reading: 'ขึ้น-แท่น' },
+                { word: 'ขุ่นเคือง', reading: 'ขุ่น-เคือง' },
+                { word: 'เข็นรถ', reading: 'เข็น-รด' },
+                { word: 'เข็มแข็ง', reading: 'เข็ม-แข็ง' },
+                { word: 'เขี้ยวแก้ว', reading: 'เขี้ยว-แก้ว' },
+                { word: 'แข', reading: 'แข' },
+                { word: 'แข็ง', reading: 'แข็ง' },
+                { word: 'แข็งขัน', reading: 'แข็ง-ขัน' },
+                { word: 'แข่งขัน', reading: 'แข่ง-ขัน' },
+                { word: 'แข็งแรง', reading: 'แข็ง-แรง' },
+                { word: 'โขมง', reading: 'โข-มง' },
+                { word: 'ไขว่ห้าง', reading: 'ไขฺว่-ห้าง' },
+                { word: 'คงคา', reading: 'คง-คา' },
+                { word: 'คน', reading: 'คน' },
+                { word: 'ค้นคว้า', reading: 'ค้น-คฺว้า' },
+                { word: 'คนโซ', reading: 'คน-โซ' },
+                { word: 'คนพาล', reading: 'คน-พาน' },
+                { word: 'ครรภ์', reading: 'คัน' },
+                { word: 'ครอบครัว', reading: 'คฺรอบ-คฺรัว' },
+                { word: 'ครั้ง', reading: 'คฺรั้ง' },
+                { word: 'คร่า', reading: 'คฺร่า' },
+                { word: 'คราว', reading: 'คฺราว' },
+                { word: 'คร่ำคร่า', reading: 'คฺร่ำ-คฺร่า' },
+                { word: 'คริสต์ศักราช', reading: 'คฺริด-สัก-กะ-หฺราด' },
+                { word: 'คลอแคล', reading: 'คฺลอ-แคล' },
+                { word: 'คล่องแคล่ว', reading: 'คฺล่อง-แคฺล่ว' },
+                { word: 'คล้องจอง', reading: 'คฺล้อง-จอง' },
+                { word: 'คลอด', reading: 'คฺลอด' },
+                { word: 'คลาไคล', reading: 'คฺลา-ไคฺล' },
+                { word: 'คลาดแคล้ว', reading: 'คฺลาด-แคฺล้ว' },
+                { word: 'คล้าย', reading: 'คฺล้าย' },
+                { word: 'คลุม', reading: 'คฺลุม' },
+                { word: 'ควร', reading: 'ควร' },
+                { word: 'ความ', reading: 'คฺวาม' },
+                { word: 'ความสุข', reading: 'คฺวาม-สุก' },
+                { word: 'ควายขวิด', reading: 'คฺวาย-ขฺวิด' },
+                { word: 'ค็อกเทล', reading: 'ค็อก-เทล' },
+                { word: 'ค้อน', reading: 'ค้อน' },
+                { word: 'คอมพิวเตอร์', reading: 'คอม-พิ-ว-เตอร์' },
+                { word: 'คอย', reading: 'คอย' },
+                { word: 'คะมำ', reading: 'คะ-มำ' },
+                { word: 'คะยั้นคะยอ', reading: 'คะ-ยั้น-คะ-ยอ' },
+                { word: 'คัด', reading: 'คัด' },
+                { word: 'คาคบ', reading: 'คา-คบ' },
+                { word: 'ค่าง', reading: 'ค่าง' },
+                { word: 'คางคก', reading: 'คาง-คก' },
+                { word: 'คางคกขึ้นวอ แมลงปอใส่ตุ้งติ้ง', reading: 'คาง-คก-ขึ้น-วอ-มะ-แรง-ปอ-ใส่-ตุ้ง-ติ้ง' },
+                { word: 'คาดคะเน', reading: 'คาด-คะ-เน' },
+                { word: 'คำประพันธ์', reading: 'คำ-ปฺระ-พัน' },
+                { word: 'คำราม', reading: 'คำ-ราม' },
+                { word: 'คำสาป', reading: 'คำ-สาบ' },
+                { word: 'คีย์ข้อมูล', reading: 'คีย์-ข้อ-มูล' },
+                { word: 'คีรี', reading: 'คี-รี' },
+                { word: 'คืนเดือนเพ็ญ', reading: 'คืน-เดือน-เพ็น' },
+                { word: 'คุกกี้', reading: 'คุก-กี้' },
+                { word: 'คุณค่า', reading: 'คุน-ค่า' },
+                { word: 'คุณธรรม', reading: 'คุน-นะ-ทำ' },
+                { word: 'คุณย่า', reading: 'คุน-ย่า' },
+                { word: 'คุณลุง', reading: 'คุน-ลุง' },
+                { word: 'คุ้นเคย', reading: 'คุน-เคย' },
+                { word: 'คูปอง', reading: 'คู-ปอง' },
+                { word: 'เค้ก', reading: 'เค้ก' },
+                { word: 'เครื่องยนต์', reading: 'เครื่อง-ยน' },
+                { word: 'เครื่องร่อน', reading: 'เครื่อง-ร่อน' },
+                { word: 'เครื่องเล่นวิดีทัศน์', reading: 'เครื่อง-เล่น-วิ-ดี-ทัด' },
+                { word: 'เครือญาติ', reading: 'เคฺรือ-ยาด' },
+                { word: 'เคลิ้ม', reading: 'เคฺลิ้ม' },
+                { word: 'เคว้งคว้าง', reading: 'เคฺว้ง-คฺว้าง' },
+                { word: 'เคอะ', reading: 'เคอะ' },
+                { word: 'แคร่', reading: 'แคฺร่' },
+                { word: 'แครอท', reading: 'แค-รอด' },
+                { word: 'แคลงใจ', reading: 'แคฺลง-ใจ' },
+                { word: 'แคลเซียม', reading: 'แคล-เซียม' },
+                { word: 'โคลงเคลง', reading: 'โคฺลง-เคฺลง' },
+                { word: 'ฆ้อง', reading: 'ฆ้อง' },
+                { word: 'ฆ่า', reading: 'ฆ่า' },
+                { word: 'โฆษณา', reading: 'โคด-สะ-นา' },
+                { word: 'งูทะเล', reading: 'งู-ทะ-เล' },
+                { word: 'เงอะงะ', reading: 'เงอะ-งะ' },
+                { word: 'เงี่ย', reading: 'เงี่ย' },
+                { word: 'เงียบกริบ', reading: 'เงียบ-กฺริบ' },
+                { word: 'จมูก', reading: 'จะ-หมูก' },
+                { word: 'จรจรัล', reading: 'จอน-จะ-รัน' },
+                { word: 'จรจัด', reading: 'จอน-จัด' },
+                { word: 'จรด', reading: 'จะ-หฺรด' },
+                { word: 'จรรยา', reading: 'จัน-ยา' },
+                { word: 'จรลี', reading: 'จอน-ระ-ลี' },
+                { word: 'จรวด', reading: 'จะ-หฺรวด' },
+                { word: 'จระเข้', reading: 'จอ-ระ-เข้' },
+                { word: 'จริง', reading: 'จิง' },
+                { word: 'จริงไซร้', reading: 'จิง-ไซร้' },
+                { word: 'จ้อกแจก', reading: 'จ้อก-แจก' },
+                { word: 'จอกแหน', reading: 'จอก-แหน' },
+                { word: 'จ้องหน่อง', reading: 'จ้อง-หน่อง' },
+                { word: 'จักตอก', reading: 'จัก-ตอก' },
+                { word: 'จังหวะ', reading: 'จัง-หวะ' },
+                { word: 'จังหวัด', reading: 'จัง-หวัด' },
+                { word: 'จัดสรร', reading: 'จัด-สัน' },
+                { word: 'จัตุบาท', reading: 'จัด-ตุ-บาด' },
+                { word: 'จันทรา', reading: 'จัน-ทฺรา' },
+                { word: 'จับ', reading: 'จับ' },
+                { word: 'จำนง', reading: 'จำ-นง' },
+                { word: 'จำวัด', reading: 'จำ-วัด' },
+                { word: 'จินดา', reading: 'จิน-ดา' },
+                { word: 'จินตนาการ', reading: 'จิน-ตะ-นา-กาน' },
+                { word: 'เจ็บปวด', reading: 'เจ็บ-ปวด' },
+                { word: 'เจรจา', reading: 'เจ-ระ-จา' },
+                { word: 'เจริญ', reading: 'จะ-เริน' },
+                { word: 'เจื้อยแจ้ว', reading: 'เจื้อย-แจ้ว' },
+                { word: 'โจ่งแจ้ง', reading: 'โจ่ง-แจ้ง' },
+                { word: 'ฉกรรจ์', reading: 'ฉะ-กัน' },
+                { word: 'ฉกาจ', reading: 'ฉะ-กาด' },
+                { word: 'ฉงน', reading: 'ฉะ-หฺงน' },
+                { word: 'ฉลาด', reading: 'ฉะ-หฺลาด' },
+                { word: 'ฉลาม', reading: 'ฉะ-หฺลาม' },
+                { word: 'ฉะเชิงเทรา', reading: 'ฉะ-เชิง-เซา' },
+                { word: 'ฉันเพล', reading: 'ฉัน-เพน' },
+                { word: 'ฉิ่ง', reading: 'ฉิ่ง' },
+                { word: 'ฉุกเฉิน', reading: 'ฉุก-เฉิน' },
+                { word: 'เฉโกโว้เว้', reading: 'เฉ-โก-โว้-เว้' },
+                { word: 'เฉพาะ', reading: 'ฉะ-เพาะ' },
+                { word: 'เฉลย', reading: 'ฉะ-เหฺลย' },
+                { word: 'เฉลา', reading: 'เฉ-ลา' },
+                { word: 'เฉลียวฉลาด', reading: 'ฉะ-เหฺลียว-ฉะ-หฺลาด' },
+                { word: 'เฉาก๊วย', reading: 'เฉา-ก๊วย' },
+                { word: 'โฉบ', reading: 'โฉบ' },
+                { word: 'โฉมฉาย', reading: 'โฉม-ฉาย' },
+                { word: 'ไฉน', reading: 'ฉะ-ไหฺน' },
+                { word: 'ชนนี', reading: 'ชน-นะ-นี' },
+                { word: 'ชนาง', reading: 'ชะ-นาง' },
+                { word: 'ชนิด', reading: 'ชะ-นิด' },
+                { word: 'ชมพู', reading: 'ชม-พู' },
+                { word: 'ชมรม', reading: 'ชม-รม' },
+                { word: 'ชรา', reading: 'ชะ-รา' },
+                { word: 'ชลนัยน์', reading: 'ชน-ละ-ไน' },
+                { word: 'ชลนา', reading: 'ชน-ละ-นา' },
+                { word: 'ชลเนตร', reading: 'ชน-ละ-เนด' },
+                { word: 'ชลี', reading: 'ชะ-ลี' },
+                { word: 'ช่วย', reading: 'ช่วย' },
+                { word: 'ชวา', reading: 'ชะ-วา' },
+                { word: 'ช็อกโกแลต', reading: 'ช็อก-โก-แล็ต' },
+                { word: 'ชักลาก', reading: 'ชัก-ลาก' },
+                { word: 'ชันษา', reading: 'ชัน-สา' },
+                { word: 'ชาดก', reading: 'ชา-ดก' },
+                { word: 'ชานบันได', reading: 'ชาน-บัน-ได' },
+                { word: 'ชายฉกรรจ์', reading: 'ชาย-ฉะ-กัน' },
+                { word: 'ชีพ', reading: 'ชีพ' },
+                { word: 'ชีวัน', reading: 'ชี-วัน' },
+                { word: 'ชีวาลัย', reading: 'ชี-วะ-ไล' },
+                { word: 'ชีวิต', reading: 'ชี-วิด' },
+                { word: 'ชื่นชม', reading: 'ชื่น-ชม' },
+                { word: 'ชุลมุน', reading: 'ชุน-ละ-มุน' },
+                { word: 'เชิญชวน', reading: 'เชิญ-ชวน' },
+                { word: 'เชิดชู', reading: 'เชิด-ชู' },
+                { word: 'แช่ง', reading: 'แช่ง' },
+                { word: 'โชคดี', reading: 'โชค-ดี' },
+                { word: 'ไชโย', reading: 'ไช-โย' },
+                { word: 'ซ่อมเสริม', reading: 'ซ่อม-เสริม' },
+                { word: 'ซาฟียะห์', reading: 'ซา-ฟี-ยะ' },
+                { word: 'ซีอิ้ว', reading: 'ซี-อิ๊ว' },
+                { word: 'ซื่อสัตย์', reading: 'ซื่อ-สัด' },
+                { word: 'เซ็งแซ่', reading: 'เซ็ง-แซ่' },
+                { word: 'เซฟข้อมูล', reading: 'เซฟ-ข้อ-มูล' },
+                { word: 'แซนด์วิช', reading: 'แซน-วิด' },
+                { word: 'ฎีกา', reading: 'ดี-กา' },
+                { word: 'เฒ่าชรา', reading: 'เถ้า-ชะ-รา' },
+                { word: 'เณรน้อย', reading: 'เนน-น้อย' },
+                { word: 'ดวงดาว', reading: 'ดวง-ดาว' },
+                { word: 'ดวงเดือน', reading: 'ดวง-เดือน' },
+                { word: 'ดวงตะวัน', reading: 'ดวง-ตะ-วัน' },
+                { word: 'ดอกบุก', reading: 'ดอก-บุก' },
+                { word: 'ดอกพุด', reading: 'ดอก-พุด' },
+                { word: 'ดังเถือใส่', reading: 'ดัง-เถือ-ใส่' },
+                { word: 'ดารา', reading: 'ดา-รา' },
+                { word: 'ดารากร', reading: 'ดา-รา-กอน' },
+                { word: 'ดาริกา', reading: 'ดา-ริ-กา' },
+                { word: 'ดาวประกายพรึก', reading: 'ดาว-ปฺระ-กาย-พฺรึก' },
+                { word: 'ดาวฤกษ์', reading: 'ดาว-เริก' },
+                { word: 'ดาษดา', reading: 'ดาด-สะ-ดา' },
+                { word: 'ดำแดง', reading: 'ดำ-แดง' },
+                { word: 'ดิน', reading: 'ดิน' },
+                { word: 'ดูหมิ่น', reading: 'ดู-หมิ่น' },
+                { word: 'เดินเล่น', reading: 'เดิน-เล่น' },
+                { word: 'ตกใจ', reading: 'ตก-ใจ' },
+                { word: 'ต้นจันทน์', reading: 'ต้น-จัน' },
+                { word: 'ต้นตาล', reading: 'ต้น-ตาน' },
+                { word: 'ต้นไทร', reading: 'ต้น-ไซ' },
+                { word: 'ต้นเสลา', reading: 'ต้น-เส-ลา' },
+                { word: 'ต้นหว้า', reading: 'ต้น-หว้า' },
+                { word: 'ตนุ', reading: 'ตะ-นุ' },
+                { word: 'ต้มเค็ม', reading: 'ต้ม-เค็ม' },
+                { word: 'ตระหนก', reading: 'ตฺระ-หนก' },
+                { word: 'ตรัส', reading: 'ตฺรัด' },
+                { word: 'ตรากตรำ', reading: 'ตฺราก-ตฺรำ' },
+                { word: 'ตริตรอง', reading: 'ตฺริ-ตฺรอง' },
+                { word: 'ตลอด', reading: 'ตะ-หฺลอด' },
+                { word: 'ตละ', reading: 'ตะ-ละ' },
+                { word: 'ตลาด', reading: 'ตะ-หฺลาด' },
+                { word: 'ตวัด', reading: 'ตะ-หวัด' },
+                { word: 'ตะกร้า', reading: 'ตะ-กฺร้า' },
+                { word: 'ตะเกียกตะกาย', reading: 'ตะ-เกียก-ตะ-กาย' },
+                { word: 'ตะโกน', reading: 'ตะ-โกน' },
+                { word: 'ตะขบ', reading: 'ตะ-ขบ' },
+                { word: 'ตะราง', reading: 'ตะ-ราง' },
+                { word: 'ตะวันชาย', reading: 'ตะ-วัน-ชาย' },
+                { word: 'ตั่ง', reading: 'ตั่ง' },
+                { word: 'ตัวยง', reading: 'ตัว-ยง' },
+                { word: 'ตาชั่ง', reading: 'ตา-ชั่ง' },
+                { word: 'ตาเต็ง', reading: 'ตา-เต็ง' },
+                { word: 'ตามรอย', reading: 'ตาม-รอย' },
+                { word: 'ตาล', reading: 'ตาน' },
+                { word: 'ตื่นเต้น', reading: 'ตื่น-เต้น' },
+                { word: 'ตุ้งติ้ง', reading: 'ตุ้ง-ติ้ง' },
+                { word: 'เตรียม', reading: 'เตฺรียม' },
+                { word: 'เต่าดำ', reading: 'เต่า-ดำ' },
+                { word: 'เต่านา', reading: 'เต่า-นา' },
+                { word: 'เต้าฮวย', reading: 'เต้า-ฮวย' },
+                { word: 'โต๊ะจีน', reading: 'โต๊ะ-จีน' },
+                { word: 'ถนน', reading: 'ถะ-หนน' },
+                { word: 'ถนอม', reading: 'ถะ-หนอม' },
+                { word: 'ถล่ม', reading: 'ถะ-หฺล่ม' },
+                { word: 'ถลา', reading: 'ถะ-หฺลา' },
+                { word: 'ถลากถลำ', reading: 'ถะ-หฺลาก-ถะ-หฺล่ำ' },
+                { word: 'ถวาย', reading: 'ถะ-หฺวาย' },
+                { word: 'ถวิล', reading: 'ถะ-หวิน' },
+                { word: 'ถิ่นฐาน', reading: 'ถิ่น-ฐาน' },
+                { word: 'เถอะ', reading: 'เถอะ' },
+                { word: 'ไถ้', reading: 'ไถ้' },
+                { word: 'ทนาย', reading: 'ทะ-นาย' },
+                { word: 'ทบทวน', reading: 'ทบ-ทวน' },
+                { word: 'ทยอย', reading: 'ทะ-ยอย' },
+                { word: 'ทรงเกาะ', reading: 'ทรง-เกาะ' },
+                { word: 'ทรงเข้าพระทัยผิด', reading: 'ทรง-เข้า-พระ-ทัย-ผิด' },
+                { word: 'ทรงคว้า', reading: 'ทรง-คฺว้า' },
+                { word: 'ทรงธรรม์', reading: 'ทรง-ทัม' },
+                { word: 'ทรงนึก', reading: 'ทรง-นึก' },
+                { word: 'ทรงยศ', reading: 'ทรง-ยด' },
+                { word: 'ทรงฤทธิ์', reading: 'ทรง-ริด' },
+                { word: 'ทรวงอก', reading: 'ซวง-อก' },
+                { word: 'ทรวดทรง', reading: 'ซวด-ทรง' },
+                { word: 'ทรัพย์สิน', reading: 'ซับ-สิน' },
+                { word: 'ทราบ', reading: 'ซาบ' },
+                { word: 'ทรามวัย', reading: 'ซาม-ไว' },
+                { word: 'ทราย', reading: 'ทราย' },
+                { word: 'ทรุดโทรม', reading: 'ซุด-โซม' },
+                { word: 'ทฤษฎี', reading: 'ทฺริด-สะ-ดี' },
+                { word: 'ท่วม', reading: 'ท่วม' },
+                { word: 'ทวยหาญ', reading: 'ทวย-หาน' },
+                { word: 'ทหาร', reading: 'ทะ-หาน' },
+                { word: 'ท่อก๊าซ', reading: 'ท่อ-ก๊าด' },
+                { word: 'ท้องฟ้า', reading: 'ท้อง-ฟ้า' },
+                { word: 'ทอดพระเนตร', reading: 'ทอด-พระ-เนด' },
+                { word: 'ทะนุถนอม', reading: 'ทะ-นุ-ถะ-หนอม' },
+                { word: 'ทะเลสาบ', reading: 'ทะ-เล-สาบ' },
+                { word: 'ทัศนศึกษา', reading: 'ทัด-สะ-นึก-สึก-สา' },
+                { word: 'ทาก', reading: 'ทาก' },
+                { word: 'ท่าน้ำ', reading: 'ท่า-น้ำ' },
+                { word: 'ท้ายซอย', reading: 'ท้าย-ซอย' },
+                { word: 'ท้าวไท', reading: 'ท้าว-ไท' },
+                { word: 'ทาวน์เฮาส์', reading: 'ทาวน์-เฮาส์' },
+                { word: 'ทำนองเสนาะ', reading: 'ทำ-นอง-สะ-เหฺนาะ' },
+                { word: 'ทิม', reading: 'ทิม' },
+                { word: 'ทิวแถว', reading: 'ทิว-แถว' },
+                { word: 'ทิวทัศน์', reading: 'ทิว-ทัด' },
+                { word: 'ทุกขเวทนา', reading: 'ทุก-ขะ-เว-ทะ-นา' },
+                { word: 'ทุกัง', reading: 'ทุก-กัง' },
+                { word: 'ทุ่งหญ้า', reading: 'ทุ่ง-หฺย้า' },
+                { word: 'ทุ่ม', reading: 'ทุ่ม' },
+                { word: 'ทูล', reading: 'ทูน' },
+                { word: 'เทเบิลเทนนิส', reading: 'เท-เบิล-เทน-นิต' },
+                { word: 'เทวา', reading: 'เท-วา' },
+                { word: 'เทวี', reading: 'เท-วี' },
+                { word: 'แท็กซี่', reading: 'แท็ก-ซี่' },
+                { word: 'แทรก', reading: 'แทฺรก' },
+                { word: 'โทรทัศน์', reading: 'โท-ระ-ทัด' },
+                { word: 'โทรศัพท์มือถือ', reading: 'โท-ระ-สับ-มือ-ถือ' },
+                { word: 'ธงชาติ', reading: 'ธง-ชาด' },
+                { word: 'ธนบัตร', reading: 'ทะ-นะ-บัด' },
+                { word: 'ธนู', reading: 'ทะ-นู' },
+                { word: 'ธรรม', reading: 'ทัม' },
+                { word: 'ธรรมชาติ', reading: 'ทำ-มะ-ชาด' },
+                { word: 'ธาตุเหล็ก', reading: 'ทาด-เหฺล็ก' },
+                { word: 'ธารา', reading: 'ทา-รา' },
+                { word: 'ธุระ', reading: 'ทุ-ระ' },
+                { word: 'เธอ', reading: 'เธอ' },
+                { word: 'นกกระสา', reading: 'นก-กะ-สา' },
+                { word: 'นกกาเหว่า', reading: 'นก-กา-เหว่า' },
+                { word: 'นกเงือก', reading: 'นก-เงือก' },
+                { word: 'นกยักษ์', reading: 'นก-ยัก' },
+                { word: 'นกยาง', reading: 'นก-ยาง' },
+                { word: 'นกแสก', reading: 'นก-แสก' },
+                { word: 'นขลิขิต', reading: 'นะ-ขะ-ลิ-ขิด' },
+                { word: 'นที', reading: 'นะ-ที' },
+                { word: 'นมัสการ', reading: 'นะ-มัด-สะ-กาน' },
+                { word: 'นโยบาย', reading: 'นะ-โย-บาย' },
+                { word: 'นักมายากล', reading: 'นัก-มา-ยา-กน' },
+                { word: 'นักร้อง', reading: 'นัก-ร้อง' },
+                { word: 'นักเลง', reading: 'นัก-เลง' },
+                { word: 'นั่งฌาน', reading: 'นั่ง-ชาน' },
+                { word: 'นัดดา', reading: 'นัด-ดา' },
+                { word: 'นาคปรก', reading: 'นาก-ปรก' },
+                { word: 'นางสนม', reading: 'นาง-สะ-หนม' },
+                { word: 'นายพราน', reading: 'นาย-พาน' },
+                { word: 'น้ำขึ้นให้รีบตัก', reading: 'น้ำ-ขึ้น-ให้-รีบ-ตัก' },
+                { word: 'น้ำบูดู', reading: 'น้ำ-บู-ดู' },
+                { word: 'น้ำมันดิบ', reading: 'น้ำ-มัน-ดิบ' },
+                { word: 'นิด', reading: 'นิด' },
+                { word: 'นิทรรศการ', reading: 'นิด-ทัด-สะ-กาน' },
+                { word: 'นิทาน', reading: 'นิ-ทาน' },
+                { word: 'นี่หรือ', reading: 'นี่-หรือ' },
+                { word: 'นี่แหละ', reading: 'นี่-แหฺละ' },
+                { word: 'เนตร', reading: 'เนด' },
+                { word: 'เนย', reading: 'เนย' },
+                { word: 'เนื้อทราย', reading: 'เนื้อ-ทราย' },
+                { word: 'แน่นขนัด', reading: 'แน่น-ขะ-หนัด' },
+                { word: 'แน่วแน่', reading: 'แน่ว-แน่' },
+                { word: 'บทบาท', reading: 'บด-บาด' },
+                { word: 'บทร้อยกรอง', reading: 'บด-ร้อย-กฺรอง' },
+                { word: 'บทอาขยาน', reading: 'บด-อา-ขะ-ยาน' },
+                { word: 'บรรจง', reading: 'บัน-จง' },
+                { word: 'บรรจุ', reading: 'บัน-จุ' },
+                { word: 'บรรเจิด', reading: 'บัน-เจิด' },
+                { word: 'บรรณารักษ์', reading: 'บัน-นา-รัก' },
+                { word: 'บรรทม', reading: 'บัน-ทม' },
+                { word: 'บรรทัด', reading: 'บัน-ทัด' },
+                { word: 'บรรพต', reading: 'บัน-พด' },
+                { word: 'บรรยากาศ', reading: 'บัน-ยา-กาด' },
+                { word: 'บรรยาย', reading: 'บัน-ยาย' },
+                { word: 'บรรลุ', reading: 'บัน-ลุ' },
+                { word: 'บรรหาร', reading: 'บัน-หาน' },
+                { word: 'บริกร', reading: 'บอ-ริ-กอน' },
+                { word: 'บริวาร', reading: 'บอ-ริ-วาน' },
+                { word: 'บริเวณ', reading: 'บอ-ริ-เวน' },
+                { word: 'บริสุทธิ์', reading: 'บอ-ริ-สุด' },
+                { word: 'บ่วง', reading: 'บ่วง' },
+                { word: 'บวม', reading: 'บวม' },
+                { word: 'บอก', reading: 'บอก' },
+                { word: 'บอกใบ้', reading: 'บอก-ใบ้' },
+                { word: 'บังคม', reading: 'บัง-คม' },
+                { word: 'บัญชา', reading: 'บัน-ชา' },
+                { word: 'บันดาล', reading: 'บัน-ดาน' },
+                { word: 'บันได', reading: 'บัน-ได' },
+                { word: 'บันทึก', reading: 'บัน-ทึก' },
+                { word: 'บันเทิง', reading: 'บัน-เทิง' },
+                { word: 'บันลือ', reading: 'บัน-ลือ' },
+                { word: 'บันลือลั่น', reading: 'บัน-ลือ-ลั่น' },
+                { word: 'บาง', reading: 'บาง' },
+                { word: 'บาตร', reading: 'บาด' },
+                { word: 'บ้านป้า', reading: 'บ้าน-ป้า' },
+                { word: 'บ่ายคล้อย', reading: 'บ่าย-คล้อย' },
+                { word: 'บาสเกตบอล', reading: 'บาด-เก็ต-บอน' },
+                { word: 'บิณฑบาต', reading: 'บิน-ทะ-บาด' },
+                { word: 'บิดา', reading: 'บิ-ดา' },
+                { word: 'บิตุรงค์', reading: 'บิ-ตุ-รง' },
+                { word: 'บิตุเรศ', reading: 'บิ-ตุ-เรด' },
+                { word: 'บึง', reading: 'บึง' },
+                { word: 'บุคคล', reading: 'บุก-คน' },
+                { word: 'บุญคุณ', reading: 'บุน-คุน' },
+                { word: 'บุญบันดาล', reading: 'บุน-บัน-ดาน' },
+                { word: 'บุตร', reading: 'บุด' },
+                { word: 'เบื้อ', reading: 'เบื้อ' },
+                { word: 'ปกติ', reading: 'ปะ-กะ-ติ' },
+                { word: 'ปกป้อง', reading: 'ปก-ป้อง' },
+                { word: 'ปฏิบัติ', reading: 'ปะ-ติ-บัด' },
+                { word: 'ปฏิบัติการ', reading: 'ปะ-ติ-บัด-กาน' },
+                { word: 'ปฏิบัติธรรม', reading: 'ปะ-ติ-บัด-ทำ' },
+                { word: 'ปฏิเสธ', reading: 'ปะ-ติ-เสด' },
+                { word: 'ปรบมือ', reading: 'ปฺรบ-มือ' },
+                { word: 'ประกาย', reading: 'ปฺระ-กาย' },
+                { word: 'ประกาศ', reading: 'ปฺระ-กาด' },
+                { word: 'ประคอง', reading: 'ปฺระ-คอง' },
+                { word: 'ประชาธิปไตย', reading: 'ปฺระ-ชา-ทิ-ปะ-ไต' },
+                { word: 'ประดิษฐ์', reading: 'ปฺระ-ดิด' },
+                { word: 'ประดิษฐาน', reading: 'ปฺระ-ดิด-สะ-ถาน' },
+                { word: 'ประเดี๋ยว', reading: 'ปฺระ-เดี๋ยว' },
+                { word: 'ประถมศึกษา', reading: 'ปฺระ-ถม-มะ-สึก-สา' },
+                { word: 'ประทับ', reading: 'ปฺระ-ทับ' },
+                { word: 'ประพาส', reading: 'ปฺระ-พาด' },
+                { word: 'ประเภท', reading: 'ปฺระ-เพด' },
+                { word: 'ประมง', reading: 'ปฺระ-มง' },
+                { word: 'ประมวล', reading: 'ปฺระ-มวน' },
+                { word: 'ประโยค', reading: 'ปฺระ-โยก' },
+                { word: 'ประโยชน์', reading: 'ปฺระ-โหฺยด' },
+                { word: 'ประลอง', reading: 'ปฺระ-ลอง' },
+                { word: 'ประสงค์', reading: 'ปฺระ-สง' },
+                { word: 'ประสูติ', reading: 'ปฺระ-สูด' },
+                { word: 'ประเสริฐ', reading: 'ปฺระ-เสิด' },
+                { word: 'ประหลาด', reading: 'ปฺระ-หฺลาด' },
+                { word: 'ปรักหักพัง', reading: 'ปฺรัก-หัก-พัง' },
+                { word: 'ปรับปรุง', reading: 'ปฺรับ-ปฺรุง' },
+                { word: 'ปรากฏ', reading: 'ปฺรา-กด' },
+                { word: 'ปราณี', reading: 'ปฺรา-นี' },
+                { word: 'ปรานี', reading: 'ปฺรา-นี' },
+                { word: 'ปรารถนา', reading: 'ปฺราด-ถะ-หนา' },
+                { word: 'ปรารภ', reading: 'ปฺรา-รบ' },
+                { word: 'ปราศรัย', reading: 'ปฺราด-ไส' },
+                { word: 'ปราสาท', reading: 'ปฺรา-สาท' },
+                { word: 'ปราะหลาด', reading: 'ปฺรอด-หฺลาด' },
+                { word: 'ปลอดโปร่ง', reading: 'ปฺลอด-โปฺร่ง' },
+                { word: 'ปลอบ', reading: 'ปฺลอบ' },
+                { word: 'ปล่อย', reading: 'ปฺล่อย' },
+                { word: 'ปลา', reading: 'ปฺลา' },
+                { word: 'ปลากระสง', reading: 'ปฺลา-กะ-สง' },
+                { word: 'ปลาขี้เหร่', reading: 'ปฺลา-ขี้-เหฺร่' },
+                { word: 'ปลาดุก', reading: 'ปฺลา-ดุก' },
+                { word: 'ปลาตะพง', reading: 'ปฺลา-ตะ-พง' },
+                { word: 'ปลาตีน', reading: 'ปฺลา-ตีน' },
+                { word: 'ปลาทูนึ่ง', reading: 'ปฺลา-ทู-นึ่ง' },
+                { word: 'ปลาปักเป้า', reading: 'ปฺลา-ปัก-เป้า' },
+                { word: 'ปลาวาฬ', reading: 'ปฺลา-วาน' },
+                { word: 'ปลาอินทรี', reading: 'ปฺลา-อิน-ทรี' },
+                { word: 'ปลาอุก', reading: 'ปฺลา-อุก' },
+                { word: 'ปลิว', reading: 'ปฺลิว' },
+                { word: 'ปลุก', reading: 'ปฺลุก' },
+                { word: 'ปอง', reading: 'ปอง' },
+                { word: 'ป้องกัน', reading: 'ป้อง-กัน' },
+                { word: 'ป๊ะ', reading: 'ป๊ะ' },
+                { word: 'ปักเป้า', reading: 'ปัก-เป้า' },
+                { word: 'ปักษา', reading: 'ปัก-สา' },
+                { word: 'ปัจจุบัน', reading: 'ปัด-จุ-บัน' },
+                { word: 'ปัญญา', reading: 'ปัน-ยา' },
+                { word: 'ปั้นปึ่ง', reading: 'ปั้น-ปึ่ง' },
+                { word: 'ป้าย', reading: 'ป้าย' },
+                { word: 'ป่าละเมาะ', reading: 'ป่า-ละ-เมาะ' },
+                { word: 'ปีศาจ', reading: 'ปี-สาด' },
+                { word: 'ปุยฝ้าย', reading: 'ปุย-ฝ้าย' },
+                { word: 'ปุยเมฆ', reading: 'ปุย-เมก' },
+                { word: 'ปูแสม', reading: 'ปู-สะ-แม' },
+                { word: 'เปรมปรีดิ์', reading: 'เปฺรม-ปฺรี' },
+                { word: 'เปรียบเทียบ', reading: 'เปฺรียบ-เทียบ' },
+                { word: 'เปรียบเปรย', reading: 'เปฺรียบ-เปฺรย' },
+                { word: 'เปรียวเป็นกระต่ายป่า', reading: 'เปฺรียว-เป็น-กะ-ต่าย-ป่า' },
+                { word: 'เปลี่ยน', reading: 'เปฺลี่ยน' },
+                { word: 'เปลี่ยว', reading: 'เปฺลี่ยว' },
+                { word: 'เป่าขลุ่ย', reading: 'เป่า-ขฺลุ่ย' },
+                { word: 'เปียกโชก', reading: 'เปียก-โชก' },
+                { word: 'เปียโน', reading: 'เปีย-โน' },
+                { word: 'แปรผัน', reading: 'แปฺร-ผัน' },
+                { word: 'แปลก', reading: 'แปฺลก' },
+                { word: 'โปรยปราย', reading: 'โปฺรย-ปฺราย' },
+                { word: 'โปรดเกล้าฯ', reading: 'โปฺรด-เกฺล้า' },
+                { word: 'ไปยาลน้อย', reading: 'ไป-ยาน-น้อย' },
+                { word: 'ไปยาลใหญ่', reading: 'ไป-ยาน-ใหญ่' },
+                { word: 'ผงก', reading: 'ผะ-หฺงก' },
+                { word: 'ผลกระทบ', reading: 'ผน-กฺระ-ทบ' },
+                { word: 'ผลงาน', reading: 'ผน-งาน' },
+                { word: 'ผลักไส', reading: 'ผลัก-ไส' },
+                { word: 'ผลัด', reading: 'ผฺลัด' },
+                { word: 'ผลาญ', reading: 'ผฺลาน' },
+                { word: 'ผลิต', reading: 'ผะ-ลิด' },
+                { word: 'ผลิตภัณฑ์', reading: 'ผะ-ลิด-ตะ-พัน' },
+                { word: 'ผลีผลาม', reading: 'ผฺลี-ผฺลาม' },
+                { word: 'ผ้าตาเล็ดงา', reading: 'ผ้า-ตา-เล็ด-งา' },
+                { word: 'ผาสุก', reading: 'ผา-สุก' },
+                { word: 'ผิดถูก', reading: 'ผิด-ถูก' },
+                { word: 'ผึ้ง', reading: 'ผึ้ง' },
+                { word: 'ผู้ใหญ่', reading: 'ผู้-ใหญ่' },
+                { word: 'เผลอ', reading: 'เผฺลอ' },
+                { word: 'เผอิญ', reading: 'เผอิญ' },
+                { word: 'แผ่นดิสก์', reading: 'แผ่น-ดิสก์' },
+                { word: 'แผลง', reading: 'แผฺลง' },
+                { word: 'ฝรั่ง', reading: 'ฝะ-หฺรั่ง' },
+                { word: 'ฝึกฝน', reading: 'ฝึก-ฝน' },
+                { word: 'แฝก', reading: 'แฝก' },
+                { word: 'พงไพร', reading: 'พง-ไพฺร' },
+                { word: 'พงศ์ประยูร', reading: 'พง-ปฺระ-ยูน' },
+                { word: 'พงศ์พันธุ์', reading: 'พง-พัน' },
+                { word: 'พงา', reading: 'พะ-งา' },
+                { word: 'พญา', reading: 'พะ-ยา' },
+                { word: 'พญาครุฑ', reading: 'พะ-ยา-คฺรุด' },
+                { word: 'พนม', reading: 'พะ-นม' },
+                { word: 'พนักงาน', reading: 'พะ-นัก-งาน' },
+                { word: 'พนาลี', reading: 'พะ-นา-ลี' },
+                { word: 'พยักหน้า', reading: 'พะ-ยัก-หน้า' },
+                { word: 'พยายาม', reading: 'พะ-ยา-ยาม' },
+                { word: 'พรรคพวก', reading: 'พัก-พวก' },
+                { word: 'พรรณนา', reading: 'พัน-นะ-นา' },
+                { word: 'พร้อม', reading: 'พฺร้อม' },
+                { word: 'พร้อมเพรียง', reading: 'พฺร้อม-เพฺรียง' },
+                { word: 'พระกรรณ', reading: 'พระ-กัน' },
+                { word: 'พระเกศา', reading: 'พระ-เก-สา' },
+                { word: 'พระคงคา', reading: 'พระ-คง-คา' },
+                { word: 'พระจันทร์', reading: 'พระ-จัน' },
+                { word: 'พระชนนี', reading: 'พระ-ชน-นะ-นี' },
+                { word: 'พระดาบส', reading: 'พระ-ดา-บด' },
+                { word: 'พระทัย', reading: 'พระ-ทัย' },
+                { word: 'พระธรรม', reading: 'พระ-ทัม' },
+                { word: 'พระธรรมเทศนา', reading: 'พระ-ทัม-มะ-เทด-สะ-นา' },
+                { word: 'พระนคร', reading: 'พระ-นะ-คอน' },
+                { word: 'พระนาสิก', reading: 'พระ-นา-สิก' },
+                { word: 'พระเนตร', reading: 'พระ-เนด' },
+                { word: 'พระบรมมหาราชวัง', reading: 'พระ-บอ-รม-มะ-หา-ราด-ชะ-วัง' },
+                { word: 'พระบาท', reading: 'พระ-บาด' },
+                { word: 'พระบาทสมเด็จพระนั่งเกล้าเจ้าอยู่หัว', reading: 'พระ-บาด-สม-เด็ด-พระ-นั่ง-เกฺล้า-เจ้า-อยู่-หัว' },
+                { word: 'พระบิตุเรศ', reading: 'พระ-บิ-ตุ-เรด' },
+                { word: 'พระพุทธ', reading: 'พระ-พุด' },
+                { word: 'พระพุทธมหามณีรัตนปฏิมากร', reading: 'พระ-พุด-ทะ-มะ-หา-มะ-นี-รัด-ตะ-นะ-ปะ-ติ-มา-กอน' },
+                { word: 'พระมเหสี', reading: 'พระ-มะ-เห-สี' },
+                { word: 'พระราชประสงค์', reading: 'พระ-ราด-ชะ-ปฺระ-สง' },
+                { word: 'พระลักษณ์', reading: 'พระ-ลัก' },
+                { word: 'พระลักษมณ์', reading: 'พระ-ลัก' },
+                { word: 'พระศรีรัตนศาสดาราม', reading: 'พระ-สี-รัด-ตะ-นะ-สาด-สะ-ดา-ราม' },
+                { word: 'พระสงฆ์', reading: 'พระ-สง' },
+                { word: 'พระหัตถ์', reading: 'พระ-หัด' },
+                { word: 'พระองค์', reading: 'พระ-อง' },
+                { word: 'พระอาทิตย์', reading: 'พระ-อา-ทิด' },
+                { word: 'พระอินทร์', reading: 'พระ-อิน' },
+                { word: 'พรั่งพรู', reading: 'พรั่ง-พฺรู' },
+                { word: 'พร่า', reading: 'พฺร่า' },
+                { word: 'พราก', reading: 'พฺราก' },
+                { word: 'พริ้ง', reading: 'พริ้ง' },
+                { word: 'พริ้นท์', reading: 'พริ้น' },
+                { word: 'พรู', reading: 'พฺรู' },
+                { word: 'พฤติกรรม', reading: 'พฺรึด-ติ-กำ' },
+                { word: 'พฤษภาคม', reading: 'พฺรึด-สะ-พา-คม' },
+                { word: 'พฤหัสบดี', reading: 'พฺรึ-หัด-สะ-บอ-ดี' },
+                { word: 'พลอย', reading: 'พฺลอย' },
+                { word: 'พลัง', reading: 'พะ-ลัง' },
+                { word: 'พลังงาน', reading: 'พะ-ลัง-งาน' },
+                { word: 'พลัดพราก', reading: 'พฺลัด-พฺราก' },
+                { word: 'พลัดหลง', reading: 'พฺลัด-หฺลง' },
+                { word: 'พลัน', reading: 'พฺลัน' },
+                { word: 'พลับพลา', reading: 'พฺลับ-พฺลา' },
+                { word: 'พลับพลาชัย', reading: 'พฺลับ-พฺลา-ชัย' },
+                { word: 'พลาง', reading: 'พฺลาง' },
+                { word: 'พลาดพลั้ง', reading: 'พฺลาด-พฺลั้ง' },
+                { word: 'พลาสติก', reading: 'พฺลาด-สะ-ติก' },
+                { word: 'พลิก', reading: 'พฺลิก' },
+                { word: 'พลิ้ว', reading: 'พฺลิ้ว' },
+                { word: 'พลีกรรม', reading: 'พฺลี-กำ' },
+                { word: 'พลีชีพ', reading: 'พฺลี-ชีพ' },
+                { word: 'พวงมาลัย', reading: 'พวง-มา-ไล' },
+                { word: 'พักตร์', reading: 'พัก' },
+                { word: 'พัฒนา', reading: 'พัด-ทะ-นา' },
+                { word: 'พันธุ์เผ่า', reading: 'พัน-เผ่า' },
+                { word: 'พากเพียร', reading: 'พาก-เพียน' },
+                { word: 'พายุ', reading: 'พา-ยุ' },
+                { word: 'พารา', reading: 'พา-รา' },
+                { word: 'พาราลิมปิก', reading: 'พา-รา-ลิม-ปิก' },
+                { word: 'พาล', reading: 'พาน' },
+                { word: 'พิเคราะห์', reading: 'พิ-เคฺราะ' },
+                { word: 'พิซซ่า', reading: 'พิซ-ซ่า' },
+                { word: 'พิธีรีตอง', reading: 'พิ-ที-รี-ตอง' },
+                { word: 'พิภพ', reading: 'พิ-พบ' },
+                { word: 'พึมพำ', reading: 'พึม-พำ' },
+                { word: 'พืชพันธุ์', reading: 'พืช-พัน' },
+                { word: 'พุทรา', reading: 'พุด-ซา' },
+                { word: 'พูดคุย', reading: 'พูด-คุย' },
+                { word: 'พูดปด', reading: 'พูด-ปด' },
+                { word: 'เพ่งพิศ', reading: 'เพ่ง-พิด' },
+                { word: 'เพนียด', reading: 'เพ-เนียด' },
+                { word: 'เพราะ', reading: 'เพราะ' },
+                { word: 'เพลง', reading: 'เพฺลง' },
+                { word: 'เพลาเย็น', reading: 'เพฺลา-เยน' },
+                { word: 'เพลารถ', reading: 'เพลา-รด' },
+                { word: 'เพลิดเพลิน', reading: 'เพฺลิด-เพฺลิน' },
+                { word: 'เพิ่มเติม', reading: 'เพิ่ม-เติม' },
+                { word: 'เพื่อน', reading: 'เพื่อน' },
+                { word: 'แพร่พันธุ์', reading: 'แพฺร่-พัน' },
+                { word: 'แพรเพลาะ', reading: 'แพฺร-เพฺลาะ' },
+                { word: 'แพศยา', reading: 'แพด-สะ-ยา' },
+                { word: 'โพ', reading: 'โพ' },
+                { word: 'โพยภัย', reading: 'โพย-ภัย' },
+                { word: 'โพรง', reading: 'โพฺรง' },
+                { word: 'ไพรสัณฑ์', reading: 'ไพฺร-สัน' },
+                { word: 'ไพเราะ', reading: 'ไพ-เราะ' },
+                { word: 'ไพศาล', reading: 'ไพ-สาน' },
+                { word: 'ฟ้าใส', reading: 'ฟ้า-ใส' },
+                { word: 'ฟุ้งเฟ้อ', reading: 'ฟุ้ง-เฟ้อ' },
+                { word: 'ฟูมฟาย', reading: 'ฟูม-ฟาย' },
+                { word: 'เฟรนซ์ฟราย', reading: 'เฟฺรน-ฟฺราย' },
+                { word: 'ภาค', reading: 'พาก' },
+                { word: 'ภาคภูมิ', reading: 'พาก-พูม' },
+                { word: 'ภาคอีสาน', reading: 'พาก-อี-สาน' },
+                { word: 'ภาพ', reading: 'พาบ' },
+                { word: 'ภาพเขียน', reading: 'พาบ-เขียน' },
+                { word: 'ภาษาไทย', reading: 'พา-สา-ไทย' },
+                { word: 'ภิรมย์', reading: 'พิ-รม' },
+                { word: 'ภูเขา', reading: 'พู-เขา' },
+                { word: 'ภูมิปัญญาท้องถิ่น', reading: 'พูม-ปัน-ยา-ท้อง-ถิ่น' },
+                { word: 'ภูวไนย', reading: 'พู-วะ-ไน' },
+                { word: 'มงคล', reading: 'มง-คน' },
+                { word: 'มณฑา', reading: 'มน-ทา' },
+                { word: 'มดงาน', reading: 'มด-งาน' },
+                { word: 'มนุษย์', reading: 'มะ-นุด' },
+                { word: 'มโนมัย', reading: 'มะ-โน-ไม' },
+                { word: 'มรคา', reading: 'มะ-ระ-คา' },
+                { word: 'มรณภาพ', reading: 'มะ-ระ-นะ-พาบ' },
+                { word: 'มรดก', reading: 'มะ-ระ-ดก' },
+                { word: 'มรรยาท', reading: 'มัน-ยาด' },
+                { word: 'มฤคมาศ', reading: 'มะ-รึก-คะ-มาด' },
+                { word: 'มฤคี', reading: 'มะ-รึก-คี' },
+                { word: 'ม้วย', reading: 'ม้วย' },
+                { word: 'มหัพภาค', reading: 'มะ-หับ-พาก' },
+                { word: 'มหัศจรรย์', reading: 'มะ-หัด-สะ-จัน' },
+                { word: 'มหิงสา', reading: 'มะ-หิง-สา' },
+                { word: 'มอเตอร์ไซค์', reading: 'มอ-เตอร์-ไซ' },
+                { word: 'มอมแมม', reading: 'มอม-แมม' },
+                { word: 'มะกอก', reading: 'มะ-กอก' },
+                { word: 'มะกะโรนี', reading: 'มะ-กะ-โร-นี' },
+                { word: 'มะขามป้อม', reading: 'มะ-ขาม-ป้อม' },
+                { word: 'มะดูก', reading: 'มะ-ดูก' },
+                { word: 'มะพร้าว', reading: 'มะ-พฺร้าว' },
+                { word: 'มะม่วงน้ำดอกไม้', reading: 'มะ-ม่วง-น้ำ-ดอก-ไม้' },
+                { word: 'มะม่วงหิมพานต์', reading: 'มะ-ม่วง-หิม-มะ-พาน' },
+                { word: 'มะโรง', reading: 'มะ-โรง' },
+                { word: 'มะแว้ง', reading: 'มะ-แว้ง' },
+                { word: 'มะเส็ง', reading: 'มะ-เส็ง' },
+                { word: 'มัทรี', reading: 'มัด-ทรี' },
+                { word: 'มาก', reading: 'มาก' },
+                { word: 'มารดา', reading: 'มาน-ดา' },
+                { word: 'มารยาท', reading: 'มา-ระ-ยาด' },
+                { word: 'มิตร', reading: 'มิด' },
+                { word: 'มิเตอร์', reading: 'มิ-เตอร์' },
+                { word: 'มีลาภ', reading: 'มี-ลาบ' },
+                { word: 'มุ้ง', reading: 'มุ้ง' },
+                { word: 'มุ่ย', reading: 'มุ่ย' },
+                { word: 'มูน', reading: 'มูน' },
+                { word: 'เมฆ', reading: 'เมก' },
+                { word: 'เมตตา', reading: 'เมด-ตา' },
+                { word: 'เมนู', reading: 'เม-นู' },
+                { word: 'เมล็ด', reading: 'มะ-เล็ด' },
+                { word: 'เมาคน', reading: 'เมา-คน' },
+                { word: 'เมารถ', reading: 'เมา-รด' },
+                { word: 'เมื่อวาน', reading: 'เมื่อ-วาน' },
+                { word: 'แม่', reading: 'แม่' },
+                { word: 'แมงดา', reading: 'แมง-ดา' },
+                { word: 'แมงป่อง', reading: 'แมง-ป่อง' },
+                { word: 'แมลง', reading: 'มะ-แรง' },
+                { word: 'แมลงปอ', reading: 'มะ-แรง-ปอ' },
+                { word: 'แมลงวัน', reading: 'มะ-แรง-วัน' },
+                { word: 'ไม้กระบอก', reading: 'ไม้-กฺระ-บอก' },
+                { word: 'ไม้กระบอง', reading: 'ไม้-กฺระ-บอง' },
+                { word: 'ไม่เข้ายา', reading: 'ไม่-เข้า-ยา' },
+                { word: 'ไม้ยมก', reading: 'ไม้-ยะ-มก' },
+                { word: 'ยกย่อง', reading: 'ยก-ย่อง' },
+                { word: 'ยวดยาน', reading: 'ยวด-ยาน' },
+                { word: 'ย่อยสลาย', reading: 'ย่อย-สะ-ลาย' },
+                { word: 'ยักษ์', reading: 'ยัก' },
+                { word: 'ยัติภังค์', reading: 'ยัด-ติ-พัง' },
+                { word: 'ยั่ว', reading: 'ยั่ว' },
+                { word: 'ยาพิษ', reading: 'ยา-พิด' },
+                { word: 'ยำเกรง', reading: 'ยำ-เกฺรง' },
+                { word: 'ยิ้มแย้ม', reading: 'ยิ้ม-แย้ม' },
+                { word: 'ยีราฟ', reading: 'ยี-ราฟ' },
+                { word: 'ยุบล', reading: 'ยุ-บน' },
+                { word: 'ยูซุป', reading: 'ยู-ซุป' },
+                { word: 'เย็นตาโฟ', reading: 'เยน-ตา-โฟ' },
+                { word: 'เยลลี่', reading: 'เยน-ลี่' },
+                { word: 'เย่อหยิ่ง', reading: 'เย่อ-หยิ่ง' },
+                { word: 'เยาะเย้ย', reading: 'เยาะ-เย้ย' },
+                { word: 'เยี่ยม', reading: 'เยี่ยม' },
+                { word: 'เยื่อใย', reading: 'เยื่อ-ใย' },
+                { word: 'แยม', reading: 'แยม' },
+                { word: 'โยทะกา', reading: 'โย-ทะ-กา' },
+                { word: 'รถ', reading: 'รด' },
+                { word: 'รถไถ', reading: 'รด-ไถ' },
+                { word: 'รถทัวร์', reading: 'รด-ทัว' },
+                { word: 'รถเมล์', reading: 'รด-เม' },
+                { word: 'รถยนต์', reading: 'รด-ยน' },
+                { word: 'ร่มชูชีพ', reading: 'ร่ม-ชู-ชีพ' },
+                { word: 'รวี', reading: 'ระ-วี' },
+                { word: 'รสชาติ', reading: 'รด-ชาด' },
+                { word: 'รสแซบ', reading: 'รด-แซบ' },
+                { word: 'รสโอชา', reading: 'รด-โอ-ชา' },
+                { word: 'รองเท้า', reading: 'รอง-เท้า' },
+                { word: 'ร้องเพลง', reading: 'ร้อง-เพฺลง' },
+                { word: 'ร้องไห้', reading: 'ร้อง-ไห้' },
+                { word: 'ระฆัง', reading: 'ระ-คัง' },
+                { word: 'ระบบนิเวศ', reading: 'ระ-บบ-นิ-เวด' },
+                { word: 'ระเบียบ', reading: 'ระ-เบียบ' },
+                { word: 'ระมัดระวัง', reading: 'ระ-มัด-ระ-วัง' },
+                { word: 'รังสรรค์', reading: 'รัง-สัน' },
+                { word: 'รัชกาล', reading: 'รัด-ชะ-กาน' },
+                { word: 'รัฐธรรมนูญ', reading: 'รัด-ถะ-ทำ-มะ-นูน' },
+                { word: 'รัฐบาล', reading: 'รัด-ถะ-บาน' },
+                { word: 'รับประทาน', reading: 'รับ-ปฺระ-ทาน' },
+                { word: 'รับสั่ง', reading: 'รับ-สั่ง' },
+                { word: 'รางวัล', reading: 'ราง-วัน' },
+                { word: 'ราชกิจ', reading: 'ราด-ชะ-กิด' },
+                { word: 'ราชสีห์', reading: 'ราด-ชะ-สี' },
+                { word: 'รามเกียรติ์', reading: 'ราม-มะ-เกียน' },
+                { word: 'ราวี', reading: 'รา-วี' },
+                { word: 'ราศี', reading: 'รา-สี' },
+                { word: 'รำพึง', reading: 'รำ-พึง' },
+                { word: 'ริบหรี่', reading: 'ริบ-หฺรี่' },
+                { word: 'ริษยา', reading: 'ริด-สะ-หยา' },
+                { word: 'รีโมทคอนโทรล', reading: 'รี-โหมด-คอน-โทน' },
+                { word: 'รื่นรมย์', reading: 'รื่น-รม' },
+                { word: 'รุ่งเรือง', reading: 'รุ่ง-เรือง' },
+                { word: 'รูปทรง', reading: 'รูป-ทรง' },
+                { word: 'รูปภาพ', reading: 'รูป-พาบ' },
+                { word: 'รู้ไว้ใช่ว่า ใส่บ่าแบกหาม', reading: 'รู้-ไว้-ใช่-ว่า-ใส่-บ่า-แบก-หาม' },
+                { word: 'รู้อย่างเป็ด', reading: 'รู้-อย่าง-เป็ด' },
+                { word: 'รู้อะไรไม่สู้รู้วิชา รู้รักษาตัวรอดเป็นยอดดี', reading: 'รู้-อะ-ไร-ไม่-สู้-รู้-วิ-ชา-รู้-รัก-สา-ตัว-รอด-เป็น-ยอด-ดี' },
+                { word: 'เร่งรีบ', reading: 'เร่ง-รีบ' },
+                { word: 'เรียบร้อย', reading: 'เรียบ-ร้อย' },
+                { word: 'เรือกอและ', reading: 'รือ-กอ-และ' },
+                { word: 'เรือนปั้นหยา', reading: 'เรือน-ปั้น-หฺยา' },
+                { word: 'เรื่อย', reading: 'เรื่อย' },
+                { word: 'แร่', reading: 'แร่' },
+                { word: 'แรด', reading: 'แรด' },
+                { word: 'โรค', reading: 'โรค' },
+                { word: 'โรงเรียน', reading: 'โรง-เรียน' },
+                { word: 'ฤกษ์', reading: 'เริก' },
+                { word: 'ฤดู', reading: 'รึ-ดู' },
+                { word: 'ฤทธิ์', reading: 'ริด' },
+                { word: 'ฤทัย', reading: 'รึ-ทัย' },
+                { word: 'ฤษี', reading: 'รึ-สี' },
+                { word: 'ฤาษี', reading: 'รือ-สี' },
+                { word: 'ฤาสาย', reading: 'รือ-สาย' },
+                { word: 'ลบหลู่', reading: 'หลบ-หฺลู่' },
+                { word: 'ล้ม', reading: 'ล้ม' },
+                { word: 'ล้มคะมำ', reading: 'ล้ม-คะ-มำ' },
+                { word: 'ลวดลาย', reading: 'ลวด-ลาย' },
+                { word: 'ละคร', reading: 'ละ-คอน' },
+                { word: 'ละม่อม', reading: 'ละ-ม่อม' },
+                { word: 'ละเมาะ', reading: 'ละ-เมาะ' },
+                { word: 'ละลานตา', reading: 'ละ-ลาน-ตา' },
+                { word: 'ละหาน', reading: 'ละ-หาน' },
+                { word: 'ละเอียด', reading: 'ละ-เอียด' },
+                { word: 'ลักษณะนิสัย', reading: 'ลัก-สะ-นะ-นิ-สัย' },
+                { word: 'ลางคน', reading: 'ลาง-คน' },
+                { word: 'ลางเนื้อชอบลางยา', reading: 'ลาง-เนื้อ-ชอบ-ลาง-ยา' },
+                { word: 'ลานวัด', reading: 'ลาน-วัด' },
+                { word: 'ลาวัณย์', reading: 'ลา-วัน' },
+                { word: 'ลำธาร', reading: 'ลำ-ทาน' },
+                { word: 'ลำพู', reading: 'ลำ-พู' },
+                { word: 'ลิฟต์', reading: 'ลิฟ' },
+                { word: 'ลีลาศ', reading: 'ลี-ลาด' },
+                { word: 'ลูกตำลึง', reading: 'ลูก-ตำ-ลึง' },
+                { word: 'ลูกมะกอก', reading: 'ลูก-มะ-กอก' },
+                { word: 'ลูกมะดูก', reading: 'ลูก-มะ-ดูก' },
+                { word: 'เลข', reading: 'เลก' },
+                { word: 'เลน', reading: 'เลน' },
+                { word: 'เล่นพนาลี', reading: 'เล่น-พะ-นา-ลี' },
+                { word: 'เล่ห์', reading: 'เล่' },
+                { word: 'เล้า', reading: 'เล้า' },
+                { word: 'เลิกคิ้ว', reading: 'เลิก-คิ้ว' },
+                { word: 'เลี้ยง', reading: 'เลี้ยง' },
+                { word: 'โลก', reading: 'โลก' },
+                { word: 'วงพักตร์', reading: 'วง-พัก' },
+                { word: 'วจี', reading: 'วะ-จี' },
+                { word: 'วรรค', reading: 'วัก' },
+                { word: 'วรรคดี', reading: 'วัก-ดี' },
+                { word: 'วรรณกรรม', reading: 'วัน-นะ-กำ' },
+                { word: 'วรรณคดี', reading: 'วัน-นะ-คะ-ดี' },
+                { word: 'วัฒนธรรม', reading: 'วัด-ทะ-นะ-ทำ' },
+                { word: 'วัดพระศรีรัตนศาสดาราม', reading: 'วัด-พระ-สี-รัด-ตะ-นะ-สาด-สะ-ดา-ราม' },
+                { word: 'วัตถุดิบ', reading: 'วัด-ถุ-ดิบ' },
+                { word: 'วันเกิด', reading: 'วัน-เกิด' },
+                { word: 'วันจันทร์', reading: 'วัน-จัน' },
+                { word: 'วันเฉลิมพระชนมพรรษา', reading: 'วัน-ฉะ-เหลิม-พระ-ชน-มะ-พัน-สา' },
+                { word: 'วันพระ', reading: 'วัน-พระ' },
+                { word: 'วันพุธ', reading: 'วัน-พุด' },
+                { word: 'วันเพ็ญ', reading: 'วัน-เพ็น' },
+                { word: 'วันศุกร์', reading: 'วัน-สุก' },
+                { word: 'วันเสาร์', reading: 'วัน-เสา' },
+                { word: 'วาดภาพ', reading: 'วาด-พาบ' },
+                { word: 'วิเคราะห์', reading: 'วิ-เคฺราะ' },
+                { word: 'วิตก', reading: 'วิ-ตก' },
+                { word: 'วิทยาศาสตร์', reading: 'วิด-ทะ-ยา-สาด' },
+                { word: 'วิธีการ', reading: 'วิ-ที-กาน' },
+                { word: 'วินัย', reading: 'วิ-ไน' },
+                { word: 'วิบัติ', reading: 'วิ-บัด' },
+                { word: 'วิวัฒน์', reading: 'วิ-วัด' },
+                { word: 'วิเศษ', reading: 'วิ-เสด' },
+                { word: 'วิฬาร์', reading: 'วิ-ลา' },
+                { word: 'วุ่นวาย', reading: 'วุ่น-วาย' },
+                { word: 'เว็บไซต์', reading: 'เว็บ-ไซ' },
+                { word: 'เวลา', reading: 'เว-ลา' },
+                { word: 'แวววาว', reading: 'แวว-วาว' },
+                { word: 'โวหาร', reading: 'โว-หาน' },
+                { word: 'ศรศิลป์', reading: 'สอน-สิน' },
+                { word: 'ศศิธร', reading: 'สะ-สิ-ทอน' },
+                { word: 'ศักดิ์ศรี', reading: 'สัก-สี' },
+                { word: 'ศัตรู', reading: 'สัด-ตฺรู' },
+                { word: 'ศัพท์', reading: 'สับ' },
+                { word: 'ศัลย์', reading: 'สัน' },
+                { word: 'ศิลปะ', reading: 'สิน-ละ-ปะ' },
+                { word: 'ศีรษะ', reading: 'สี-สะ' },
+                { word: 'ศึกษา', reading: 'สึก-สา' },
+                { word: 'เศรษฐกิจ', reading: 'เสด-ถะ-กิด' },
+                { word: 'เศรษฐี', reading: 'เสด-ถี' },
+                { word: 'เศร้า', reading: 'เศร้า' },
+                { word: 'โศกศัลย์', reading: 'โสก-สัน' },
+                { word: 'โศกเศร้า', reading: 'โสก-เศร้า' },
+                { word: 'สกปรก', reading: 'สก-กะ-ปฺรก' },
+                { word: 'สงสัย', reading: 'สง-สัย' },
+                { word: 'สงสาร', reading: 'สง-สาน' },
+                { word: 'ส่งเสริม', reading: 'ส่ง-เสริม' },
+                { word: 'สงัด', reading: 'สะ-หฺงัด' },
+                { word: 'สง่า', reading: 'สะ-หฺง่า' },
+                { word: 'สถาน', reading: 'สะ-ถาน' },
+                { word: 'สถานีรถไฟฟ้า', reading: 'สะ-ถา-นี-รด-ไฟ-ฟ้า' },
+                { word: 'สถาปนา', reading: 'สะ-ถา-ปะ-นา' },
+                { word: 'สถาปัตยกรรม', reading: 'สะ-ถา-ปัด-ตะ-ยะ-กำ' },
+                { word: 'สนอง', reading: 'สะ-หนอง' },
+                { word: 'สนับสนุน', reading: 'สะ-หนับ-สะ-หนุน' },
+                { word: 'สนาน', reading: 'สะ-หนาน' },
+                { word: 'สนุก', reading: 'สะ-หนุก' },
+                { word: 'สนุกสนาน', reading: 'สะ-หนุก-สะ-หนาน' },
+                { word: 'สบาย', reading: 'สะ-บาย' },
+                { word: 'สมดุล', reading: 'สม-ดุน' },
+                { word: 'สมน้ำหน้า', reading: 'สม-น้ำ-หน้า' },
+                { word: 'สมบัติ', reading: 'สม-บัด' },
+                { word: 'สมัคร', reading: 'สะ-หมัก' },
+                { word: 'สมัครสมาน', reading: 'สะ-หมัก-สะ-หมาน' },
+                { word: 'สมัย', reading: 'สะ-ไหม' },
+                { word: 'สมาชิก', reading: 'สะ-มา-ชิก' },
+                { word: 'สมาน', reading: 'สะ-หมาน' },
+                { word: 'สมุด', reading: 'สะ-หฺมุด' },
+                { word: 'สมุทร', reading: 'สะ-หฺมุด' },
+                { word: 'สรงน้ำ', reading: 'สง-น้ำ' },
+                { word: 'สรร', reading: 'สัน' },
+                { word: 'สรรพสิ่ง', reading: 'สับ-พะ-สิ่ง' },
+                { word: 'สรรพสินค้า', reading: 'สับ-พะ-สิน-ค้า' },
+                { word: 'สร้างสรรค์', reading: 'สร้าง-สัน' },
+                { word: 'สรุป', reading: 'สะ-หฺรุป' },
+                { word: 'สลบ', reading: 'สะ-หฺลบ' },
+                { word: 'สลวย', reading: 'สะ-หฺลวย' },
+                { word: 'สละ', reading: 'สะ-ละ' },
+                { word: 'สลัด', reading: 'สะ-หฺลัด' },
+                { word: 'สวรรคต', reading: 'สะ-หวัน-คะ-คด' },
+                { word: 'สวัสดี', reading: 'สะ-หวัด-ดี' },
+                { word: 'สว่าง', reading: 'สะ-หฺว่าง' },
+                { word: 'สวาท', reading: 'สะ-หวาด' },
+                { word: 'สวิตซ์', reading: 'สะ-หวิด' },
+                { word: 'สอดไส้', reading: 'สอด-ไส้' },
+                { word: 'สะพัด', reading: 'สะ-พัด' },
+                { word: 'สะพาน', reading: 'สะ-พาน' },
+                { word: 'สักครู่', reading: 'สัก-คฺรู่' },
+                { word: 'สังเกต', reading: 'สัง-เกด' },
+                { word: 'สังวร', reading: 'สัง-วอน' },
+                { word: 'สั่งสอน', reading: 'สั่ง-สอน' },
+                { word: 'สังหาร', reading: 'สัง-หาน' },
+                { word: 'สัจจะ', reading: 'สัด-จะ' },
+                { word: 'สัจจา', reading: 'สัด-จา' },
+                { word: 'สัญจร', reading: 'สัน-จอน' },
+                { word: 'สัญญา', reading: 'สัน-ยา' },
+                { word: 'สัญญาณ', reading: 'สัน-ยาน' },
+                { word: 'สัญประกาศ', reading: 'สัน-ปฺระ-กาด' },
+                { word: 'สัณฐาน', reading: 'สัน-ถาน' },
+                { word: 'สัตว์', reading: 'สัด' },
+                { word: 'สัตว์ประหลาด', reading: 'สัด-ปฺระ-หฺลาด' },
+                { word: 'สั่นเครือ', reading: 'สั่น-เคฺรือ' },
+                { word: 'สันติ', reading: 'สัน-ติ' },
+                { word: 'สันติธรรม', reading: 'สัน-ติ-ทำ' },
+                { word: 'สันนิษฐาน', reading: 'สัน-นิด-สะ-ถาน' },
+                { word: 'สัมผัส', reading: 'สำ-ผัด' },
+                { word: 'สัมพันธ์', reading: 'สำ-พัน' },
+                { word: 'สัมฤทธิ์', reading: 'สำ-ริด' },
+                { word: 'สาคร', reading: 'สา-คอน' },
+                { word: 'สาปแช่ง', reading: 'สาบ-แช่ง' },
+                { word: 'สามัคคี', reading: 'สา-มัก-คี' },
+                { word: 'สายลับ', reading: 'สาย-ลับ' },
+                { word: 'สายสร้อย', reading: 'สาย-สร้อย' },
+                { word: 'สารพัด', reading: 'สาน-พัด' },
+                { word: 'สาหร่าย', reading: 'สา-หฺร่าย' },
+                { word: 'สาหัส', reading: 'สา-หัด' },
+                { word: 'สำคัญ', reading: 'สำ-คัญ' },
+                { word: 'สำคัญว่า', reading: 'สำ-คัญ-ว่า' },
+                { word: 'สำเนียง', reading: 'สำ-เนียง' },
+                { word: 'สำเพ็ง', reading: 'สำ-เพ็ง' },
+                { word: 'สำราญ', reading: 'สำ-ราน' },
+                { word: 'สำลัก', reading: 'สำ-ลัก' },
+                { word: 'สิงขร', reading: 'สิง-คอน' },
+                { word: 'สิงโต', reading: 'สิง-โต' },
+                { word: 'สิทธิพิเศษ', reading: 'สิด-ทิ-พิ-เสด' },
+                { word: 'สิทธิศักดิ์', reading: 'สิด-ทิ-สัก' },
+                { word: 'สีคราม', reading: 'สี-คฺราม' },
+                { word: 'สีซอให้ควายฟัง', reading: 'สี-ซอ-ให้-คฺวาย-ฟัง' },
+                { word: 'สุขทุกข์', reading: 'สุก-ทุก' },
+                { word: 'สุขสันต์', reading: 'สุก-สัน' },
+                { word: 'สุนัข', reading: 'สุ-นัก' },
+                { word: 'สุราษฎร์ธานี', reading: 'สุ-ราด-ทา-นี' },
+                { word: 'สุริย์วงศ์', reading: 'สุ-ริด-วง' },
+                { word: 'สุริยัน', reading: 'สุ-ริ-ยัน' },
+                { word: 'สุริยา', reading: 'สุ-ริ-ยา' },
+                { word: 'สูญสิ้น', reading: 'สูน-สิ้น' },
+                { word: 'สู้ยิบตา', reading: 'สู้-ยิบ-ตา' },
+                { word: 'เสงี่ยม', reading: 'สะ-เหฺงี่ยม' },
+                { word: 'เสด็จ', reading: 'สะ-เด็ด' },
+                { word: 'เสด็จกลับ', reading: 'สะ-เด็ด-กฺลับ' },
+                { word: 'เสด็จเลียบ', reading: 'สะ-เด็ด-เลียบ' },
+                { word: 'เสมอ', reading: 'สะ-เหฺมอ' },
+                { word: 'เสร็จ', reading: 'เส็ด' },
+                { word: 'เสริ์ฟ', reading: 'เสิร์ฟ' },
+                { word: 'เสรี', reading: 'เส-รี' },
+                { word: 'เสวนา', reading: 'เส-วะ-นา' },
+                { word: 'เสวย', reading: 'สะ-เหฺวย' },
+                { word: 'เสวยราชย์', reading: 'สะ-เหฺวย-ราด' },
+                { word: 'เสแสร้ง', reading: 'เส-แสร้ง' },
+                { word: 'เสาะหา', reading: 'เสาะ-หา' },
+                { word: 'เสื่อ', reading: 'เสื่อ' },
+                { word: 'เสื้อ', reading: 'เสื้อ' },
+                { word: 'เสื่อมโทรม', reading: 'เสื่อม-โซม' },
+                { word: 'แสดง', reading: 'สะ-แดง' },
+                { word: 'แสม', reading: 'สะ-แม' },
+                { word: 'แสร้ง', reading: 'แสร้ง' },
+                { word: 'แสลง', reading: 'สะ-แหฺลง' },
+                { word: 'โสภา', reading: 'โส-พา' },
+                { word: 'โสม', reading: 'โสม' },
+                { word: 'หกล้ม', reading: 'หก-ล้ม' },
+                { word: 'หงอยเหงา', reading: 'หฺงอย-เหฺงา' },
+                { word: 'หงาย', reading: 'หฺงาย' },
+                { word: 'หงุดหงิด', reading: 'หฺงุด-หฺงิด' },
+                { word: 'หญ้า', reading: 'หฺย้า' },
+                { word: 'หญ้าคา', reading: 'หฺย้า-คา' },
+                { word: 'หญ้าแพรก', reading: 'หฺย้า-แพฺรก' },
+                { word: 'หญิง', reading: 'หฺยิง' },
+                { word: 'หนอนหนังสือ', reading: 'หนอน-หนัง-สือ' },
+                { word: 'หน่อย', reading: 'หน่อย' },
+                { word: 'หนังสือ', reading: 'หนัง-สือ' },
+                { word: 'หนังสือพิมพ์', reading: 'หนัง-สือ-พิม' },
+                { word: 'หนา', reading: 'หฺนา' },
+                { word: 'หน้าฉาน', reading: 'หน้า-ฉาน' },
+                { word: 'หน้าซีดเป็นไก่ต้ม', reading: 'หน้า-ซีด-เป็น-ไก่-ต้ม' },
+                { word: 'หนาว', reading: 'หฺนาว' },
+                { word: 'หนาวแล้ว', reading: 'หฺนาว-แล้ว' },
+                { word: 'หนึ่ง', reading: 'หนึ่ง' },
+                { word: 'หนึ่งตำบลหนึ่งผลิตภัณฑ์', reading: 'หนึ่ง-ตำ-บน-หนึ่ง-ผะ-ลิด-ตะ-พัน' },
+                { word: 'หมดกัน', reading: 'หมด-กัน' },
+                { word: 'หมวดหมู่', reading: 'หมวด-หมู่' },
+                { word: 'หมอ', reading: 'หมอ' },
+                { word: 'หมอน', reading: 'หมอน' },
+                { word: 'หม่อนไหม', reading: 'หม่อน-ไหม' },
+                { word: 'หมั่น', reading: 'หมั่น' },
+                { word: 'หมั่นไส้', reading: 'หมั่น-ไส้' },
+                { word: 'หมาป่า', reading: 'หฺมา-ป่า' },
+                { word: 'หยากไย่', reading: 'หฺยัก-ไย่' },
+                { word: 'หยาม', reading: 'หฺยาม' },
+                { word: 'หยิ่ง', reading: 'หฺยิ่ง' },
+                { word: 'หยิบ', reading: 'หฺยิบ' },
+                { word: 'หรรษา', reading: 'หัน-สา' },
+                { word: 'หรือ', reading: 'หรือ' },
+                { word: 'หรูหรา', reading: 'หฺรู-หฺรา' },
+                { word: 'หลง', reading: 'หฺลง' },
+                { word: 'หลงกล', reading: 'หฺลง-กน' },
+                { word: 'หลงเชื่อ', reading: 'หฺลง-เชื่อ' },
+                { word: 'หลงใหล', reading: 'หฺลง-ไหฺล' },
+                { word: 'หล่น', reading: 'หฺล่น' },
+                { word: 'หลวง', reading: 'หฺลวง' },
+                { word: 'หลอกลวง', reading: 'หฺลอก-ลวง' },
+                { word: 'หลั่งไหล', reading: 'หฺลั่ง-ไหฺล' },
+                { word: 'หลับ', reading: 'หฺลับ' },
+                { word: 'หลาน', reading: 'หฺลาน' },
+                { word: 'หวั่นหวาน', reading: 'หฺวั่น-หฺวาน' },
+                { word: 'หวาดกลัว', reading: 'หฺวาด-กฺลัว' },
+                { word: 'หวาน', reading: 'หฺวาน' },
+                { word: 'หวานแหวว', reading: 'หฺวาน-แหวว' },
+                { word: 'หวุดหวิด', reading: 'หฺวุด-หฺวิด' },
+                { word: 'หอย', reading: 'หอย' },
+                { word: 'ห้อยท้าย', reading: 'ห้อย-ท้าย' },
+                { word: 'หอยแมลงภู่', reading: 'หอย-มะ-แรง-พู่' },
+                { word: 'หอยสังข์', reading: 'หอย-สัง' },
+                { word: 'ห่อหมก', reading: 'ห่อ-หมก' },
+                { word: 'หักโหมโรมรัน', reading: 'หัก-โหม-โรม-รัน' },
+                { word: 'หัตถ์', reading: 'หัด' },
+                { word: 'หัตถกรรม', reading: 'หัด-ถะ-กำ' },
+                { word: 'หับ', reading: 'หับ' },
+                { word: 'หัวแข็ง', reading: 'หัว-แข็ง' },
+                { word: 'หัวเราะ', reading: 'หัว-เราะ' },
+                { word: 'หาข่าว', reading: 'หา-ข่าว' },
+                { word: 'หาดทราย', reading: 'หาด-ทราย' },
+                { word: 'หาตริตรองมิได้', reading: 'หา-ตฺริ-ตฺรอง-มิ-ได้' },
+                { word: 'หิ่งห้อย', reading: 'หิ่ง-ห้อย' },
+                { word: 'หิว', reading: 'หิว' },
+                { word: 'หิวข้าวจนตาลาย', reading: 'หิว-ข้าว-จน-ตา-ลาย' },
+                { word: 'หูผึ่ง', reading: 'หู-ผึ่ง' },
+                { word: 'หูฝาด', reading: 'หู-ฝาด' },
+                { word: 'เหงา', reading: 'เหฺงา' },
+                { word: 'เหตุการณ์', reading: 'เหด-กาน' },
+                { word: 'เหตุผล', reading: 'เหด-ผน' },
+                { word: 'เห็น', reading: 'เห็น' },
+                { word: 'เห็นช้างขี้ ขี้ตามช้าง', reading: 'เห็น-ช้าง-ขี้-ขี้-ตาม-ช้าง' },
+                { word: 'เหน็ดเหนื่อย', reading: 'เหฺน็ด-เหฺนื่อย' },
+                { word: 'เหนอะหนะ', reading: 'เหฺนะ-หฺนะ' },
+                { word: 'เหนียวแน่น', reading: 'เหฺนียว-แน่น' },
+                { word: 'เหม็น', reading: 'เหม็น' },
+                { word: 'เหมันต์', reading: 'เหฺมน-มัน' },
+                { word: 'เหมาะสม', reading: 'เหฺมาะ-สม' },
+                { word: 'เหมือน', reading: 'เหมือน' },
+                { word: 'เหย้าเรือน', reading: 'เหย้า-เรือน' },
+                { word: 'เหยียบ', reading: 'เหยียบ' },
+                { word: 'เหยื่อ', reading: 'เหยื่อ' },
+                { word: 'เหล็กเพชร', reading: 'เหฺล็ก-เพ็ด' },
+                { word: 'เหลวไหล', reading: 'เหฺลว-ไหล' },
+                { word: 'เหลียวหลัง', reading: 'เหฺลียว-หลัง' },
+                { word: 'เหลือ', reading: 'เหฺลือ' },
+                { word: 'เหว', reading: 'เหว' },
+                { word: 'แหงน', reading: 'แหฺงน' },
+                { word: 'แหนง', reading: 'แหนง' },
+                { word: 'แหย่', reading: 'แหฺย่' },
+            ];
+
+            // --- DOM Elements ---
+            const progressText = document.getElementById('progress');
+            const playBtn = document.getElementById('play-btn');
+            const answerInput = document.getElementById('answer-input');
+            const checkBtn = document.getElementById('check-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const feedbackDiv = document.getElementById('feedback');
+
+            // --- App State ---
+            let currentWordIndex = 0;
+            let score = 0;
+            const synth = window.speechSynthesis;
+            let shuffledWords = [];
+
+            // --- Functions ---
+
+            /**
+             * Shuffles array in place.
+             * @param {Array} a items An array containing the items.
+             */
+            function shuffle(a) {
+                for (let i = a.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
             }
-        };
 
-        let currentGrade = 'p1';
-        let timerInterval;
-        let seconds = 0;
-        let dictationWordsPool = [];
-        let currentDictationWord = '';
-        let currentDictationReading = '';
-        let selectedDifficulty = 'medium';
-        let spokenCount = 0;
-        let thaiVoice = null; // Variable to store the selected Thai voice
-
-        // Function to create a word card for display
-        function createWordCard(wordItem) {
-            return `
-                <div class="word-card bg-white p-4 rounded-lg shadow-md border border-gray-200 hover:shadow-lg hover:border-emerald-500 transition-shadow duration-300 flex flex-col justify-center items-center">
-                    <p class="text-2xl font-bold text-gray-800">${wordItem.word}</p>
-                    <p class="text-gray-500 mt-1">อ่านว่า (${wordItem.reading})</p>
-                </div>
-            `;
-        }
-        
-        // Function to render words based on selected grade
-        function renderWords(grade) {
-            const contentDiv = document.getElementById('word-content');
-            const data = wordData[grade];
-
-            let html = `
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2 mb-4">ความยากปานกลาง</h2>
-                    <div id="${grade}-medium-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        ${data.medium.map(createWordCard).join('')}
-                    </div>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2 mb-4">ความยากมากที่สุด</h2>
-                    <div id="${grade}-hard-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        ${data.hard.map(createWordCard).join('')}
-                    </div>
-                </div>
-            `;
-            contentDiv.innerHTML = html;
-        }
-
-        // Function to change the active grade tab and re-render words
-        function changeGrade(grade) {
-            currentGrade = grade;
-            
-            document.querySelectorAll('#navigation button').forEach(button => {
-                button.classList.remove('active-tab');
-                button.classList.add('inactive-tab');
-            });
-
-            document.getElementById(`tab-${grade}`).classList.add('active-tab');
-            document.getElementById(`tab-${grade}`).classList.remove('inactive-tab');
-            
-            renderWords(grade);
-            document.getElementById('searchInput').value = ''; // Clear search on grade change
-            stopDictation(); // Stop any ongoing dictation when changing grade
-        }
-
-        // Function to filter words based on search input
-        function filterWords() {
-            const input = document.getElementById('searchInput');
-            const filter = input.value.toLowerCase();
-            const wordCards = document.querySelectorAll('.word-card');
-
-            wordCards.forEach(card => {
-                const word = card.querySelector('p:first-child').innerText.toLowerCase();
-                const reading = card.querySelector('p:last-child').innerText.toLowerCase();
-                if (word.includes(filter) || reading.includes(filter)) {
-                    card.style.display = "";
+            /**
+             * Loads the current word or ends the game.
+             */
+            function loadWord() {
+                if (currentWordIndex < shuffledWords.length) {
+                    updateProgress();
+                    answerInput.value = '';
+                    feedbackDiv.innerHTML = '';
+                    feedbackDiv.className = '';
+                    answerInput.disabled = false;
+                    answerInput.focus();
+                    checkBtn.classList.remove('hidden');
+                    nextBtn.classList.add('hidden');
                 } else {
-                    card.style.display = "none";
+                    // End of the game
+                    endGame();
+                }
+            }
+            
+            /**
+             * Updates the progress text.
+             */
+            function updateProgress() {
+                 progressText.textContent = `คำที่ ${currentWordIndex + 1} / ${shuffledWords.length} | คะแนน: ${score}`;
+            }
+
+            /**
+             * Speaks the current word using the browser's TTS engine.
+             */
+            function speak() {
+                if (synth.speaking) {
+                    synth.cancel(); // Cancel previous speech if any
+                }
+                if (currentWordIndex < shuffledWords.length) {
+                    const wordToSpeak = shuffledWords[currentWordIndex].word;
+                    const utterance = new SpeechSynthesisUtterance(wordToSpeak);
+                    
+                    // Set language to Thai for correct pronunciation
+                    utterance.lang = 'th-TH';
+                    utterance.rate = 0.85; // Slightly slower for clarity
+                    utterance.pitch = 1;
+
+                    utterance.onerror = (event) => {
+                        console.error('SpeechSynthesisUtterance.onerror', event);
+                        feedbackDiv.innerHTML = `<div class="incorrect"><p>ขออภัย, ไม่สามารถเล่นเสียงได้</p></div>`;
+                    };
+                    
+                    synth.speak(utterance);
+                }
+            }
+
+            /**
+             * Checks the user's answer against the correct one.
+             */
+            function checkAnswer() {
+                const userAnswer = answerInput.value.trim();
+                const correctAnswer = shuffledWords[currentWordIndex].word;
+                const correctReading = shuffledWords[currentWordIndex].reading;
+
+                if (userAnswer === '') {
+                    feedbackDiv.innerHTML = `<p>กรุณาพิมพ์คำตอบ</p>`;
+                    feedbackDiv.className = 'incorrect';
+                    return;
+                }
+
+                if (userAnswer === correctAnswer) {
+                    score++;
+                    feedbackDiv.innerHTML = `<p>✅ ถูกต้อง!</p>`;
+                    feedbackDiv.className = 'correct';
+                } else {
+                    feedbackDiv.innerHTML = `
+                        <p>❌ ผิด</p>
+                        <p><strong>คำตอบที่ถูกต้องคือ:</strong> ${correctAnswer}</p>
+                        <p><strong>อ่านว่า:</strong> (${correctReading})</p>
+                    `;
+                    feedbackDiv.className = 'incorrect';
+                }
+
+                updateProgress();
+                answerInput.disabled = true;
+                checkBtn.classList.add('hidden');
+                nextBtn.classList.remove('hidden');
+                nextBtn.focus();
+            }
+
+            /**
+             * Moves to the next word.
+             */
+            function nextWord() {
+                currentWordIndex++;
+                loadWord();
+            }
+            
+            /**
+             * Displays the final score and message.
+             */
+            function endGame() {
+                progressText.textContent = `สิ้นสุด | คะแนนสุดท้าย: ${score} / ${shuffledWords.length}`;
+                const percentage = (score / shuffledWords.length) * 100;
+                let endMessage = `<h2>เยี่ยมมาก! คุณทำแบบทดสอบเสร็จแล้ว</h2>`;
+                if (percentage < 50) {
+                   endMessage += `<p>พยายามอีกหน่อยนะ!</p>`;
+                } else if (percentage < 80) {
+                   endMessage += `<p>ทำได้ดีมาก!</p>`;
+                } else {
+                   endMessage += `<p>สุดยอดไปเลย!</p>`;
+                }
+                feedbackDiv.innerHTML = endMessage;
+                feedbackDiv.className = 'correct';
+                checkBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                playBtn.disabled = true;
+                answerInput.disabled = true;
+            }
+            
+            /**
+             * Initializes the application.
+             */
+            function initializeApp() {
+                shuffledWords = shuffle([...words]); // Shuffle the words for variety
+                currentWordIndex = 0;
+                score = 0;
+                loadWord();
+            }
+
+            // --- Event Listeners ---
+            playBtn.addEventListener('click', speak);
+            checkBtn.addEventListener('click', checkAnswer);
+            nextBtn.addEventListener('click', nextWord);
+
+            // Allow pressing Enter to check or move to the next word
+            answerInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !checkBtn.classList.contains('hidden')) {
+                    checkAnswer();
                 }
             });
-        }
-
-        // Timer functions
-        function updateTimerDisplay() {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            document.getElementById('timerDisplay').innerText = 
-                `${minutes < 10 ? '0' : ''}${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-        }
-
-        function startTimer() {
-            if (!timerInterval) {
-                timerInterval = setInterval(() => {
-                    seconds++;
-                    updateTimerDisplay();
-                }, 1000);
-            }
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-
-        function resetTimer() {
-            stopTimer();
-            seconds = 0;
-            updateTimerDisplay();
-        }
-
-        // Dictation functions
-        function updateDictationDifficulty(difficulty) {
-            selectedDifficulty = difficulty;
-            stopDictation(); // Reset dictation if difficulty changes
-        }
-
-        function initDictation() {
-            const words = wordData[currentGrade][selectedDifficulty];
-            dictationWordsPool = [...words]; // Copy words to a mutable pool
-            // Shuffle the words
-            for (let i = dictationWordsPool.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [dictationWordsPool[i], dictationWordsPool[j]] = [dictationWordsPool[j], dictationWordsPool[i]];
-            }
-        }
-
-        function speakWord(word, times) {
-            if (!word || !window.speechSynthesis) {
-                console.warn("Speech synthesis not supported or no word to speak.");
-                return;
-            }
-
-            // Ensure voices are loaded and a Thai voice is selected
-            if (!thaiVoice) {
-                const voices = window.speechSynthesis.getVoices();
-                thaiVoice = voices.find(voice => voice.lang === 'th-TH');
-                if (!thaiVoice) {
-                    console.warn("Thai voice not found. Speech synthesis might not work as expected.");
-                    // Fallback to default if Thai voice is not available
-                }
-            }
-
-            spokenCount = 0;
-            const utterThis = new SpeechSynthesisUtterance(word);
-            utterThis.lang = 'th-TH'; // Set language to Thai
-            if (thaiVoice) {
-                utterThis.voice = thaiVoice; // Assign the found Thai voice
-            }
-
-            utterThis.onend = () => {
-                spokenCount++;
-                if (spokenCount < times) {
-                    setTimeout(() => {
-                        window.speechSynthesis.speak(utterThis);
-                    }, 500); // Small delay between repetitions
-                }
-            };
-
-            window.speechSynthesis.speak(utterThis);
-        }
-
-        function startDictation() {
-            initDictation();
-            resetTimer();
-            document.getElementById('startButton').disabled = true;
-            document.getElementById('nextButton').disabled = false;
-            document.getElementById('revealButton').disabled = false;
-            document.getElementById('playAudioButton').disabled = false;
-            document.getElementById('dictationWordDisplay').classList.add('hidden'); // Hide word initially
-            nextWord();
-        }
-
-        function nextWord() {
-            if (dictationWordsPool.length === 0) {
-                alert('คำศัพท์ในหมวดนี้หมดแล้ว! จะเริ่มสุ่มใหม่ทั้งหมด');
-                initDictation(); // Reshuffle if all words have been used
-            }
-
-            const wordItem = dictationWordsPool.pop();
-            currentDictationWord = wordItem.word;
-            currentDictationReading = wordItem.reading;
-
-            document.getElementById('currentWord').innerText = ''; // Clear previous word
-            document.getElementById('currentReading').innerText = ''; // Clear previous reading
-            document.getElementById('dictationWordDisplay').classList.add('hidden'); // Ensure hidden for new word
-
-            speakWord(currentDictationWord, 2);
-            resetTimer();
-            startTimer();
-        }
-
-        function revealWord() {
-            document.getElementById('currentWord').innerText = currentDictationWord;
-            document.getElementById('currentReading').innerText = `อ่านว่า (${currentDictationReading})`;
-            document.getElementById('dictationWordDisplay').classList.remove('hidden');
-            stopTimer();
-        }
-
-        function stopDictation() {
-            stopTimer();
-            resetTimer();
-            document.getElementById('startButton').disabled = false;
-            document.getElementById('nextButton').disabled = true;
-            document.getElementById('revealButton').disabled = true;
-            document.getElementById('playAudioButton').disabled = true;
-            document.getElementById('dictationWordDisplay').classList.add('hidden');
-            document.getElementById('currentWord').innerText = '';
-            document.getElementById('currentReading').innerText = '';
-            if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.cancel();
-            }
-        }
-
-        // Event listener for voices changed
-        window.speechSynthesis.onvoiceschanged = () => {
-            const voices = window.speechSynthesis.getVoices();
-            thaiVoice = voices.find(voice => voice.lang === 'th-TH');
-            if (!thaiVoice) {
-                console.warn("Thai voice not found after voices changed event. Speech synthesis might not work as expected.");
-            }
-        };
-
-        // Initial setup on page load
-        window.onload = () => {
-            changeGrade('p1'); // Set default grade to P1
-            updateDictationDifficulty('medium'); // Set default dictation difficulty
-            // Ensure initial state of dictation buttons
-            document.getElementById('startButton').disabled = false;
-            document.getElementById('nextButton').disabled = true;
-            document.getElementById('revealButton').disabled = true;
-            document.getElementById('playAudioButton').disabled = true;
             
-            // Attempt to load voices immediately if they are already available
-            if (window.speechSynthesis.getVoices().length > 0) {
-                const voices = window.speechSynthesis.getVoices();
-                thaiVoice = voices.find(voice => voice.lang === 'th-TH');
-                if (!thaiVoice) {
-                    console.warn("Thai voice not found on initial load. Speech synthesis might not work as expected.");
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Enter' && !nextBtn.classList.contains('hidden')) {
+                    nextWord();
                 }
-            }
-        };
+            });
 
+            // --- Initial load ---
+            initializeApp();
+        });
     </script>
-
 </body>
 </html>
